@@ -9,7 +9,11 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@payloadcms/db-postgres": "3.88.0",
+    "@payloadcms/next": "3.88.0",
+    "graphql": "16.14.2",
     "next": "16.3.2",
+    "payload": "3.88.0",
     "react": "19.2.8",
     "react-dom": "19.2.8"
   },
@@ -23,5 +27,6 @@
     "tailwindcss": "^4",
     "typescript": "^6.0.3"
   },
-  "packageManager": "pnpm@11.22.0"
+  "packageManager": "pnpm@11.22.0",
+  "type": "module"
 }
