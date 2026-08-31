@@ -6,32 +6,31 @@ import { Text } from '@/components/ui/Text'
 import { Rule } from '@/components/ui/Rule'
 import { WhatsAppIcon } from '@/components/icons/WhatsAppIcon'
 import { InstagramIcon } from '@/components/icons/InstagramIcon'
-import { siteConfig, whatsappHref, instagramHref } from '@/config/site'
+import { whatsappHref, instagramHref } from '@/lib/links'
 import type { Locale } from '@/i18n/config'
 import type { Dictionary } from '@/i18n/dictionaries/types'
+import type { NavItem, SiteSettingsContent } from '@/lib/payload/queries'
 
 interface FooterProps {
   locale: Locale
   dict: Dictionary
-}
-
-const exploreKeys = ['courses', 'academy', 'faq'] as const
-const exploreHashes: Record<(typeof exploreKeys)[number], string> = {
-  courses: '#courses',
-  academy: '#academy',
-  faq: '#faq',
+  navItems: NavItem[]
+  siteSettings: SiteSettingsContent
 }
 
 /** Server Component — nothing here needs client interactivity. WhatsApp
- * and Instagram links only render once real values land in
- * `src/config/site.ts`, so a placeholder can never masquerade as a real
- * contact channel. */
-export function Footer({ locale, dict }: FooterProps) {
+ * and Instagram links only render once real values exist in Payload's
+ * Site Settings global, so a placeholder can never masquerade as a real
+ * contact channel. The "Explore" column reuses the same Navigation
+ * global as the header (minus the home link), rather than a second,
+ * separately-hardcoded link list. */
+export function Footer({ locale, dict, navItems, siteSettings }: FooterProps) {
   const homeHref = `/${locale}`
-  const whatsapp = whatsappHref()
-  const instagram = instagramHref()
+  const whatsapp = whatsappHref(siteSettings.whatsappNumber)
+  const instagram = instagramHref(siteSettings.instagramHandle)
   const hasConnect = Boolean(whatsapp || instagram)
   const year = new Date().getFullYear()
+  const exploreItems = navItems.filter((item) => item.path !== '/')
 
   return (
     <Section as="footer" tone="ink" spacing="sm">
@@ -56,13 +55,15 @@ export function Footer({ locale, dict }: FooterProps) {
               {dict.footer.explore}
             </Text>
             <ul className="flex flex-col gap-3">
-              {exploreKeys.map((key) => (
-                <li key={key}>
+              {exploreItems.map((item) => (
+                <li key={item.path}>
                   <Link
-                    href={`${homeHref}${exploreHashes[key]}`}
+                    href={`${homeHref}${item.path}`}
+                    target={item.openInNewTab ? '_blank' : undefined}
+                    rel={item.openInNewTab ? 'noopener noreferrer' : undefined}
                     className="font-body text-sm text-porcelain/90 transition-colors hover:text-champagne"
                   >
-                    {dict.nav[key]}
+                    {item.label}
                   </Link>
                 </li>
               ))}
@@ -109,7 +110,7 @@ export function Footer({ locale, dict }: FooterProps) {
         <Rule tone="champagne" className="my-10 opacity-30" />
 
         <Text size="xs" className="text-blush">
-          © {year} {siteConfig.name}. {dict.footer.rightsReserved}
+          © {year} {dict.common.brandMark} {dict.common.brandSubtitle}. {dict.footer.rightsReserved}
         </Text>
       </Container>
     </Section>

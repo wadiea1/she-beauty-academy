@@ -7,10 +7,6 @@ const en = {
     tagline: 'Become SHE.',
   },
   nav: {
-    home: 'Home',
-    courses: 'Courses',
-    academy: 'The Academy',
-    faq: 'FAQ',
     apply: 'Book a Consultation',
     openMenu: 'Open menu',
     closeMenu: 'Close menu',

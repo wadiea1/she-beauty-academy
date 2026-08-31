@@ -8,10 +8,10 @@ export interface Dictionary {
     tagline: string
   }
   nav: {
-    home: string
-    courses: string
-    academy: string
-    faq: string
+    // home/courses/academy/faq link labels live in Payload's Navigation
+    // global (Milestone G) — the actual link structure, not fixed
+    // interface vocabulary. `apply` stays here: it's the site's one
+    // recurring CTA action label, reused identically everywhere.
     apply: string
     openMenu: string
     closeMenu: string

@@ -7,10 +7,6 @@ const he = {
     tagline: 'היי SHE.',
   },
   nav: {
-    home: 'בית',
-    courses: 'קורסים',
-    academy: 'על האקדמיה',
-    faq: 'שאלות נפוצות',
     apply: 'קביעת ייעוץ',
     openMenu: 'פתיחת התפריט',
     closeMenu: 'סגירת התפריט',

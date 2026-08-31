@@ -7,27 +7,27 @@ import { cn } from '@/lib/cn'
 import { Button } from '@/components/ui/Button'
 import { locales, localeMeta, type Locale } from '@/i18n/config'
 import type { Dictionary } from '@/i18n/dictionaries/types'
+import type { NavItem } from '@/lib/payload/queries'
 
 interface NavigationProps {
   locale: Locale
   dict: Dictionary
+  navItems: NavItem[]
 }
 
-const navKeys = ['home', 'courses', 'academy', 'faq'] as const
-const navHashes: Record<(typeof navKeys)[number], string | null> = {
-  home: null,
-  courses: '#courses',
-  academy: '#academy',
-  faq: '#faq',
+function itemHref(homeHref: string, item: NavItem) {
+  return item.path === '/' ? homeHref : `${homeHref}${item.path}`
 }
 
 /**
  * Site header: desktop nav + language switcher + Apply CTA, collapsing
  * into an accessible full-screen drawer on mobile. Client Component
  * because the mobile toggle and language switcher both need interactivity
- * — the rest of the page stays server-rendered.
+ * — the rest of the page stays server-rendered. `navItems` comes from
+ * Payload's Navigation global, fetched server-side in the locale layout
+ * and passed down — this component never talks to Payload itself.
  */
-export function Navigation({ locale, dict }: NavigationProps) {
+export function Navigation({ locale, dict, navItems }: NavigationProps) {
   const [open, setOpen] = useState(false)
   const pathname = usePathname()
   const menuId = useId()
@@ -80,13 +80,15 @@ export function Navigation({ locale, dict }: NavigationProps) {
           </Link>
 
           <nav aria-label={dict.nav.primaryNav} className="hidden items-center gap-8 md:flex">
-            {navKeys.map((key) => (
+            {navItems.map((item) => (
               <Link
-                key={key}
-                href={navHashes[key] ? `${homeHref}${navHashes[key]}` : homeHref}
+                key={item.path}
+                href={itemHref(homeHref, item)}
+                target={item.openInNewTab ? '_blank' : undefined}
+                rel={item.openInNewTab ? 'noopener noreferrer' : undefined}
                 className="font-body text-sm text-cocoa transition-colors hover:text-rosewood-ink"
               >
-                {dict.nav[key]}
+                {item.label}
               </Link>
             ))}
           </nav>
@@ -139,14 +141,16 @@ export function Navigation({ locale, dict }: NavigationProps) {
             aria-label={dict.nav.primaryNav}
             className="flex flex-1 flex-col items-start justify-center gap-6 px-8"
           >
-            {navKeys.map((key) => (
+            {navItems.map((item) => (
               <Link
-                key={key}
-                href={navHashes[key] ? `${homeHref}${navHashes[key]}` : homeHref}
+                key={item.path}
+                href={itemHref(homeHref, item)}
+                target={item.openInNewTab ? '_blank' : undefined}
+                rel={item.openInNewTab ? 'noopener noreferrer' : undefined}
                 onClick={() => setOpen(false)}
                 className="font-display text-3xl text-ink"
               >
-                {dict.nav[key]}
+                {item.label}
               </Link>
             ))}
             <Button
