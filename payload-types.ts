@@ -95,8 +95,16 @@ export interface Config {
     defaultIDType: number;
   };
   fallbackLocale: ('false' | 'none' | 'null') | false | null | ('ar' | 'he' | 'en') | ('ar' | 'he' | 'en')[];
-  globals: {};
-  globalsSelect: {};
+  globals: {
+    'site-settings': SiteSetting;
+    navigation: Navigation;
+    homepage: Homepage;
+  };
+  globalsSelect: {
+    'site-settings': SiteSettingsSelect<false> | SiteSettingsSelect<true>;
+    navigation: NavigationSelect<false> | NavigationSelect<true>;
+    homepage: HomepageSelect<false> | HomepageSelect<true>;
+  };
   locale: 'ar' | 'he' | 'en';
   widgets: {
     collections: CollectionsWidget;
@@ -659,6 +667,278 @@ export interface PayloadMigrationsSelect<T extends boolean = true> {
   batch?: T;
   updatedAt?: T;
   createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "site-settings".
+ */
+export interface SiteSetting {
+  id: number;
+  /**
+   * E.164 format without the leading "+", e.g. "9725XXXXXXXX".
+   */
+  whatsappNumber?: string | null;
+  /**
+   * Without the "@".
+   */
+  instagramHandle?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  /**
+   * Physical academy address, as it should be displayed per language.
+   */
+  address?: string | null;
+  /**
+   * Fallback metadata for pages that do not set their own.
+   */
+  defaultSeo?: {
+    metaTitle?: string | null;
+    metaDescription?: string | null;
+    ogImage?: (number | null) | Media;
+  };
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "navigation".
+ */
+export interface Navigation {
+  id: number;
+  /**
+   * Reorder by dragging. Path can be an in-page anchor ("#courses"), a site path ("/courses"), or a full external URL.
+   */
+  items?:
+    | {
+        label: string;
+        path: string;
+        openInNewTab?: boolean | null;
+        id?: string | null;
+      }[]
+    | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "homepage".
+ */
+export interface Homepage {
+  id: number;
+  hero: {
+    eyebrow: string;
+    heading: string;
+    lead: string;
+    image?: (number | null) | Media;
+  };
+  manifesto: {
+    eyebrow: string;
+    heading: string;
+    body: string;
+  };
+  whySHE: {
+    eyebrow: string;
+    heading: string;
+    pillars?:
+      | {
+          title: string;
+          body: string;
+          id?: string | null;
+        }[]
+      | null;
+  };
+  coursesIntro: {
+    eyebrow: string;
+    heading: string;
+    /**
+     * The course cards themselves come from the Courses collection.
+     */
+    intro: string;
+  };
+  insideAcademy: {
+    eyebrow: string;
+    heading: string;
+    body: string;
+    /**
+     * Aim for 4, for the mosaic grid layout.
+     */
+    images?:
+      | {
+          image: number | Media;
+          id?: string | null;
+        }[]
+      | null;
+  };
+  whatYouLeaveWith: {
+    eyebrow: string;
+    heading: string;
+    points?:
+      | {
+          text: string;
+          id?: string | null;
+        }[]
+      | null;
+  };
+  instructor: {
+    eyebrow: string;
+    heading: string;
+    role: string;
+    /**
+     * Keep the distinction from AGENTS.md §11 explicit: this experience belongs to the instructor's prior career, not to SHE itself.
+     */
+    bio?:
+      | {
+          paragraph: string;
+          id?: string | null;
+        }[]
+      | null;
+    photo?: (number | null) | Media;
+  };
+  faqIntro: {
+    eyebrow: string;
+    heading: string;
+  };
+  apply: {
+    eyebrow: string;
+    heading: string;
+    body: string;
+  };
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "site-settings_select".
+ */
+export interface SiteSettingsSelect<T extends boolean = true> {
+  whatsappNumber?: T;
+  instagramHandle?: T;
+  email?: T;
+  phone?: T;
+  address?: T;
+  defaultSeo?:
+    | T
+    | {
+        metaTitle?: T;
+        metaDescription?: T;
+        ogImage?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "navigation_select".
+ */
+export interface NavigationSelect<T extends boolean = true> {
+  items?:
+    | T
+    | {
+        label?: T;
+        path?: T;
+        openInNewTab?: T;
+        id?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "homepage_select".
+ */
+export interface HomepageSelect<T extends boolean = true> {
+  hero?:
+    | T
+    | {
+        eyebrow?: T;
+        heading?: T;
+        lead?: T;
+        image?: T;
+      };
+  manifesto?:
+    | T
+    | {
+        eyebrow?: T;
+        heading?: T;
+        body?: T;
+      };
+  whySHE?:
+    | T
+    | {
+        eyebrow?: T;
+        heading?: T;
+        pillars?:
+          | T
+          | {
+              title?: T;
+              body?: T;
+              id?: T;
+            };
+      };
+  coursesIntro?:
+    | T
+    | {
+        eyebrow?: T;
+        heading?: T;
+        intro?: T;
+      };
+  insideAcademy?:
+    | T
+    | {
+        eyebrow?: T;
+        heading?: T;
+        body?: T;
+        images?:
+          | T
+          | {
+              image?: T;
+              id?: T;
+            };
+      };
+  whatYouLeaveWith?:
+    | T
+    | {
+        eyebrow?: T;
+        heading?: T;
+        points?:
+          | T
+          | {
+              text?: T;
+              id?: T;
+            };
+      };
+  instructor?:
+    | T
+    | {
+        eyebrow?: T;
+        heading?: T;
+        role?: T;
+        bio?:
+          | T
+          | {
+              paragraph?: T;
+              id?: T;
+            };
+        photo?: T;
+      };
+  faqIntro?:
+    | T
+    | {
+        eyebrow?: T;
+        heading?: T;
+      };
+  apply?:
+    | T
+    | {
+        eyebrow?: T;
+        heading?: T;
+        body?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
