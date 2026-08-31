@@ -3,6 +3,7 @@
 import { useEffect, useId, useRef, useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import { cn } from '@/lib/cn'
 import { Button } from '@/components/ui/Button'
 import { locales, localeMeta, type Locale } from '@/i18n/config'
@@ -33,6 +34,7 @@ export function Navigation({ locale, dict, navItems }: NavigationProps) {
   const menuId = useId()
   const closeButtonRef = useRef<HTMLButtonElement>(null)
   const toggleButtonRef = useRef<HTMLButtonElement>(null)
+  const reduceMotion = useReducedMotion()
 
   useEffect(() => {
     if (!open) return
@@ -86,9 +88,16 @@ export function Navigation({ locale, dict, navItems }: NavigationProps) {
                 href={itemHref(homeHref, item)}
                 target={item.openInNewTab ? '_blank' : undefined}
                 rel={item.openInNewTab ? 'noopener noreferrer' : undefined}
-                className="font-body text-sm text-cocoa transition-colors hover:text-rosewood-ink"
+                className="group relative inline-block py-1 font-body text-sm text-cocoa transition-colors hover:text-rosewood-ink"
               >
                 {item.label}
+                {/* Symmetric center-out expansion, not a directional
+                 * sweep — reads identically in RTL and LTR without
+                 * needing a logical-property flip. */}
+                <span
+                  aria-hidden="true"
+                  className="absolute inset-x-0 -bottom-0.5 h-px origin-center scale-x-0 bg-rosewood-ink transition-transform duration-300 group-hover:scale-x-100"
+                />
               </Link>
             ))}
           </nav>
@@ -117,57 +126,63 @@ export function Navigation({ locale, dict, navItems }: NavigationProps) {
         </div>
       </header>
 
-      {open && (
-        <div
-          id={menuId}
-          role="dialog"
-          aria-modal="true"
-          aria-label={dict.nav.menuLabel}
-          className="fixed inset-0 z-50 flex flex-col bg-porcelain md:hidden"
-        >
-          <div className="flex items-center justify-between px-6 py-4">
-            <span className="font-display text-2xl text-ink">{dict.common.brandMark}</span>
-            <button
-              ref={closeButtonRef}
-              type="button"
-              onClick={() => setOpen(false)}
-              className="rounded-[var(--radius-panel)] p-2 font-body text-sm text-cocoa"
-            >
-              {dict.nav.closeMenu}
-            </button>
-          </div>
-
-          <nav
-            aria-label={dict.nav.primaryNav}
-            className="flex flex-1 flex-col items-start justify-center gap-6 px-8"
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            id={menuId}
+            role="dialog"
+            aria-modal="true"
+            aria-label={dict.nav.menuLabel}
+            className="fixed inset-0 z-50 flex flex-col bg-porcelain md:hidden"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: reduceMotion ? 0 : 0.2 }}
           >
-            {navItems.map((item) => (
-              <Link
-                key={item.path}
-                href={itemHref(homeHref, item)}
-                target={item.openInNewTab ? '_blank' : undefined}
-                rel={item.openInNewTab ? 'noopener noreferrer' : undefined}
+            <div className="flex items-center justify-between px-6 py-4">
+              <span className="font-display text-2xl text-ink">{dict.common.brandMark}</span>
+              <button
+                ref={closeButtonRef}
+                type="button"
                 onClick={() => setOpen(false)}
-                className="font-display text-3xl text-ink"
+                className="rounded-[var(--radius-panel)] p-2 font-body text-sm text-cocoa"
               >
-                {item.label}
-              </Link>
-            ))}
-            <Button
-              href={`${homeHref}#apply`}
-              size="lg"
-              className="mt-4"
-              onClick={() => setOpen(false)}
-            >
-              {dict.nav.apply}
-            </Button>
-          </nav>
+                {dict.nav.closeMenu}
+              </button>
+            </div>
 
-          <div className="flex justify-center gap-6 px-8 py-8">
-            <LanguageSwitcher locale={locale} localizedPath={localizedPath} />
-          </div>
-        </div>
-      )}
+            <nav
+              aria-label={dict.nav.primaryNav}
+              className="flex flex-1 flex-col items-start justify-center gap-6 px-8"
+            >
+              {navItems.map((item) => (
+                <Link
+                  key={item.path}
+                  href={itemHref(homeHref, item)}
+                  target={item.openInNewTab ? '_blank' : undefined}
+                  rel={item.openInNewTab ? 'noopener noreferrer' : undefined}
+                  onClick={() => setOpen(false)}
+                  className="font-display text-3xl text-ink transition-colors hover:text-rosewood-ink"
+                >
+                  {item.label}
+                </Link>
+              ))}
+              <Button
+                href={`${homeHref}#apply`}
+                size="lg"
+                className="mt-4"
+                onClick={() => setOpen(false)}
+              >
+                {dict.nav.apply}
+              </Button>
+            </nav>
+
+            <div className="flex justify-center gap-6 px-8 py-8">
+              <LanguageSwitcher locale={locale} localizedPath={localizedPath} />
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </>
   )
 }

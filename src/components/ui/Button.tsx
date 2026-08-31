@@ -6,7 +6,12 @@ type Variant = 'primary' | 'secondary' | 'ghost' | 'inverse' | 'outline-inverse'
 type Size = 'sm' | 'md' | 'lg'
 
 const base =
-  'inline-flex items-center justify-center gap-2 rounded-[var(--radius-panel)] font-body font-medium transition-colors duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 disabled:pointer-events-none disabled:opacity-50'
+  // Pure CSS, not Motion: a hover/active state needs no viewport
+  // detection or client boundary, and every call site (including inside
+  // Server Components) gets it for free. motion-reduce: cancels the
+  // lift itself — the color/background transition stays, since that's
+  // a state change, not motion.
+  'inline-flex items-center justify-center gap-2 rounded-[var(--radius-panel)] font-body font-medium transition-[color,background-color,border-color,transform] duration-200 -translate-y-0 hover:-translate-y-px active:translate-y-0 motion-reduce:!translate-y-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 disabled:pointer-events-none disabled:opacity-50'
 
 const variantClass: Record<Variant, string> = {
   primary: 'bg-ink text-porcelain hover:bg-cocoa focus-visible:outline-champagne',

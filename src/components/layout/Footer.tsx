@@ -82,9 +82,9 @@ export function Footer({ locale, dict, navItems, siteSettings }: FooterProps) {
                       href={whatsapp}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center gap-2 font-body text-sm text-porcelain/90 transition-colors hover:text-champagne"
+                      className="group flex items-center gap-2 font-body text-sm text-porcelain/90 transition-colors hover:text-champagne"
                     >
-                      <WhatsAppIcon className="h-4 w-4" />
+                      <WhatsAppIcon className="h-4 w-4 transition-transform duration-200 group-hover:scale-110 motion-reduce:!scale-100" />
                       {dict.footer.whatsapp}
                     </a>
                   </li>
@@ -95,9 +95,9 @@ export function Footer({ locale, dict, navItems, siteSettings }: FooterProps) {
                       href={instagram}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center gap-2 font-body text-sm text-porcelain/90 transition-colors hover:text-champagne"
+                      className="group flex items-center gap-2 font-body text-sm text-porcelain/90 transition-colors hover:text-champagne"
                     >
-                      <InstagramIcon className="h-4 w-4" />
+                      <InstagramIcon className="h-4 w-4 transition-transform duration-200 group-hover:scale-110 motion-reduce:!scale-100" />
                       {dict.footer.instagram}
                     </a>
                   </li>
