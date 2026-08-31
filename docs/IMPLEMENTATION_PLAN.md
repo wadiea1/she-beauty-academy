@@ -172,6 +172,39 @@ and status is this file plus `git log`.
       `Text`/etc. and pass CMS-sourced children through — the homepage
       itself is not converted to a Client Component. No motion
       component imports Payload.
+
+      **Bundle impact, measured (and re-measured after a bad first
+      attempt)**: the first attempt used `git stash` to get a "before"
+      build to diff against, but `git stash` doesn't touch *untracked*
+      files by default — `src/components/motion/` stayed on disk, so
+      the "baseline" build actually failed at the TypeScript step
+      (`Cannot find module 'motion/react'`) rather than producing a
+      real pre-motion build; the chunk-size number taken from it was
+      invalid and should never have been reported as a measurement.
+      Redone properly with a temporary `git worktree` checked out at
+      `main` (a genuinely separate, clean directory — no risk of
+      cross-contamination from untracked files), `pnpm install
+      --frozen-lockfile`, and a `next build` required to exit 0 before
+      any measurement was taken, on both sides:
+      - `main` baseline: **3,038,297 bytes** across `.next/static/chunks`.
+      - `feat/motion-system`: **3,194,401 bytes**.
+      - Delta: **+156,104 bytes (~152 KiB) raw/pre-gzip, +5.14%** —
+        app-wide, since `.next/static/chunks` includes every route
+        (including the Payload admin panel), not just the homepage.
+      - A more targeted figure: reading `/[locale]`'s own RSC
+        client-reference-manifest (the set of chunks Next actually
+        associates with that route) and summing only those files gives
+        70,608 bytes on `main` vs. 223,950 bytes on
+        `feat/motion-system` — a delta of **153,342 bytes**, closely
+        matching the app-wide figure. This is still an approximation
+        (some referenced chunks are shared Next.js runtime code, not
+        exclusive to this route) rather than a guaranteed clean
+        isolation, but it corroborates that the growth is concentrated
+        in this route's own code, not spread elsewhere. Not a route-
+        specific number to treat as exact.
+      - This is a modest, expected cost for a motion library used
+        across most of the homepage's animated elements — not treated
+        as a performance problem requiring architecture changes.
 - [x] **F — Payload collections/globals**: `Media`, `Courses`, `FAQs`,
       `Testimonials` (architecture only, no seeded records), `Applications`
       (leads, staff-only access); globals `SiteSettings`, `Navigation`,
