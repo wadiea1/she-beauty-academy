@@ -70,6 +70,8 @@ export interface Config {
     users: User;
     media: Media;
     courses: Course;
+    faqs: Faq;
+    testimonials: Testimonial;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -80,6 +82,8 @@ export interface Config {
     users: UsersSelect<false> | UsersSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
     courses: CoursesSelect<false> | CoursesSelect<true>;
+    faqs: FaqsSelect<false> | FaqsSelect<true>;
+    testimonials: TestimonialsSelect<false> | TestimonialsSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -264,6 +268,59 @@ export interface Course {
   createdAt: string;
 }
 /**
+ * Frequently asked questions shown on the homepage (and, later, course pages).
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "faqs".
+ */
+export interface Faq {
+  id: number;
+  status: 'draft' | 'published';
+  /**
+   * Lower numbers show first.
+   */
+  order?: number | null;
+  /**
+   * Optional — leave blank for a general FAQ shown on the homepage.
+   */
+  relatedCourse?: (number | null) | Course;
+  question: string;
+  answer: string;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Real testimonials only, with explicit consent. Leave this collection empty rather than publish anything unverified.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "testimonials".
+ */
+export interface Testimonial {
+  id: number;
+  status: 'draft' | 'published';
+  /**
+   * Required before publishing: confirm the person agreed to have their words used publicly.
+   */
+  consentObtained: boolean;
+  /**
+   * How/when consent was obtained, e.g. "Written consent via email, 2026-01-14".
+   */
+  consentNote?: string | null;
+  relatedCourse?: (number | null) | Course;
+  /**
+   * A real name — never invented. Not localized (it is a proper noun).
+   */
+  authorName: string;
+  /**
+   * e.g. "Cosmetics 1 graduate" — optional.
+   */
+  authorRole?: string | null;
+  quote: string;
+  photo?: (number | null) | Media;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
@@ -298,6 +355,14 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'courses';
         value: number | Course;
+      } | null)
+    | ({
+        relationTo: 'faqs';
+        value: number | Faq;
+      } | null)
+    | ({
+        relationTo: 'testimonials';
+        value: number | Testimonial;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -425,6 +490,35 @@ export interface CoursesSelect<T extends boolean = true> {
   enrollmentState?: T;
   metaTitle?: T;
   metaDescription?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "faqs_select".
+ */
+export interface FaqsSelect<T extends boolean = true> {
+  status?: T;
+  order?: T;
+  relatedCourse?: T;
+  question?: T;
+  answer?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "testimonials_select".
+ */
+export interface TestimonialsSelect<T extends boolean = true> {
+  status?: T;
+  consentObtained?: T;
+  consentNote?: T;
+  relatedCourse?: T;
+  authorName?: T;
+  authorRole?: T;
+  quote?: T;
+  photo?: T;
   updatedAt?: T;
   createdAt?: T;
 }
