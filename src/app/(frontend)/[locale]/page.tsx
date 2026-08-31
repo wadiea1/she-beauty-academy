@@ -12,6 +12,7 @@ import { InstructorCredibility } from '@/components/sections/InstructorCredibili
 import { FAQSection } from '@/components/sections/FAQSection'
 import { ApplyCTA } from '@/components/sections/ApplyCTA'
 import { SocialProof } from '@/components/sections/SocialProof'
+import { ThreadContainer } from '@/components/motion/ThreadContainer'
 
 export default async function HomePage({ params }: PageProps<'/[locale]'>) {
   const { locale } = await params
@@ -27,26 +28,28 @@ export default async function HomePage({ params }: PageProps<'/[locale]'>) {
 
   return (
     <>
-      <Hero copy={homepage.hero} ctaLabel={dict.nav.apply} />
-      <Manifesto copy={homepage.manifesto} />
-      <WhySHE copy={homepage.whySHE} />
-      <Courses
-        copy={homepage.coursesIntro}
-        courses={courses}
-        ctaLabel={dict.nav.apply}
-        locale={locale}
-      />
-      <InsideAcademy copy={homepage.insideAcademy} />
-      <WhatYouLeaveWith copy={homepage.whatYouLeaveWith} />
-      <InstructorCredibility copy={homepage.instructor} />
-      <FAQSection copy={homepage.faqIntro} items={faqs} />
-      <ApplyCTA
-        copy={homepage.apply}
-        ctaLabel={dict.nav.apply}
-        whatsappLabel={dict.footer.whatsapp}
-        whatsappNumber={siteSettings.whatsappNumber}
-        locale={locale}
-      />
+      <ThreadContainer>
+        <Hero copy={homepage.hero} ctaLabel={dict.nav.apply} />
+        <Manifesto copy={homepage.manifesto} />
+        <WhySHE copy={homepage.whySHE} />
+        <Courses
+          copy={homepage.coursesIntro}
+          courses={courses}
+          ctaLabel={dict.nav.apply}
+          locale={locale}
+        />
+        <InsideAcademy copy={homepage.insideAcademy} />
+        <WhatYouLeaveWith copy={homepage.whatYouLeaveWith} />
+        <InstructorCredibility copy={homepage.instructor} />
+        <FAQSection copy={homepage.faqIntro} items={faqs} />
+        <ApplyCTA
+          copy={homepage.apply}
+          ctaLabel={dict.nav.apply}
+          whatsappLabel={dict.footer.whatsapp}
+          whatsappNumber={siteSettings.whatsappNumber}
+          locale={locale}
+        />
+      </ThreadContainer>
       <SocialProof
         eyebrow={dict.footer.connect}
         heading={dict.footer.instagram}
