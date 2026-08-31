@@ -4,16 +4,19 @@ import { Heading } from '@/components/ui/Heading'
 import { Text } from '@/components/ui/Text'
 import { Eyebrow } from '@/components/ui/Eyebrow'
 import { CourseCard } from '@/components/ui/CourseCard'
-import type { HomepageCopy } from '@/content/homepage'
+import type { CourseContent, HomepageContent } from '@/lib/payload/queries'
 import type { Locale } from '@/i18n/config'
 
 interface CoursesProps {
-  copy: HomepageCopy['courses']
+  copy: HomepageContent['coursesIntro']
+  courses: CourseContent[]
+  /** Site-wide default CTA label; a course's own `ctaLabel` (set in
+   * Payload) overrides it when present. */
   ctaLabel: string
   locale: Locale
 }
 
-export function Courses({ copy, ctaLabel, locale }: CoursesProps) {
+export function Courses({ copy, courses, ctaLabel, locale }: CoursesProps) {
   return (
     <Section id="courses" tone="shell" spacing="md">
       <Container width="editorial">
@@ -26,14 +29,14 @@ export function Courses({ copy, ctaLabel, locale }: CoursesProps) {
         </Text>
 
         <div className="grid gap-8 sm:grid-cols-3">
-          {copy.items.map((course, i) => (
+          {courses.map((course, i) => (
             <CourseCard
               key={course.slug}
               index={i + 1}
               title={course.title}
               description={course.description}
               href={`/${locale}#apply`}
-              ctaLabel={ctaLabel}
+              ctaLabel={course.ctaLabel ?? ctaLabel}
             />
           ))}
         </div>

@@ -4,18 +4,18 @@ import { Heading } from '@/components/ui/Heading'
 import { Text } from '@/components/ui/Text'
 import { Eyebrow } from '@/components/ui/Eyebrow'
 import { ImageFrame } from '@/components/ui/ImageFrame'
-import type { HomepageCopy } from '@/content/homepage'
+import type { HomepageContent } from '@/lib/payload/queries'
 
 interface InstructorCredibilityProps {
-  copy: HomepageCopy['instructor']
+  copy: HomepageContent['instructor']
 }
 
 /**
  * Replaces the graduate testimonials we don't have yet (SHE is too new
  * for legitimate ones) with the instructor's actual, verifiable prior
  * experience — see AGENTS.md §11: that track record belongs to her, not
- * to SHE itself, and the copy in src/content/homepage.ts is written to
- * keep that distinction explicit.
+ * to SHE itself, and the copy in Payload's Homepage global (seeded from
+ * src/seed/) is written to keep that distinction explicit.
  */
 export function InstructorCredibility({ copy }: InstructorCredibilityProps) {
   return (
@@ -23,7 +23,7 @@ export function InstructorCredibility({ copy }: InstructorCredibilityProps) {
       <Container width="editorial">
         <div className="grid items-center gap-12 lg:grid-cols-12 lg:gap-16">
           <div className="lg:col-span-5">
-            <ImageFrame ratio="portrait" alt={copy.imageAlt} className="max-w-sm" />
+            <ImageFrame ratio="portrait" src={copy.image.src} alt={copy.image.alt} className="max-w-sm" />
           </div>
 
           <div className="lg:col-span-7">

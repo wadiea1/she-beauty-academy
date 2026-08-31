@@ -4,15 +4,16 @@ import { Heading } from '@/components/ui/Heading'
 import { Text } from '@/components/ui/Text'
 import { Eyebrow } from '@/components/ui/Eyebrow'
 import { Rule } from '@/components/ui/Rule'
-import type { HomepageCopy } from '@/content/homepage'
+import type { FaqContent, HomepageContent } from '@/lib/payload/queries'
 
 interface FAQSectionProps {
-  copy: HomepageCopy['faq']
+  copy: HomepageContent['faqIntro']
+  items: FaqContent[]
 }
 
 /** Native <details>/<summary> — a fully accessible, keyboard-operable
  * accordion with zero client JS. */
-export function FAQSection({ copy }: FAQSectionProps) {
+export function FAQSection({ copy, items }: FAQSectionProps) {
   return (
     <Section id="faq" tone="shell" spacing="md">
       <Container width="reading">
@@ -22,7 +23,7 @@ export function FAQSection({ copy }: FAQSectionProps) {
         </Heading>
 
         <div>
-          {copy.items.map((item, i) => (
+          {items.map((item, i) => (
             <div key={item.question}>
               {i > 0 && <Rule tone="champagne" className="opacity-60" />}
               <details className="group py-6">

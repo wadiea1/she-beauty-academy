@@ -4,10 +4,10 @@ import { Heading } from '@/components/ui/Heading'
 import { Text } from '@/components/ui/Text'
 import { Eyebrow } from '@/components/ui/Eyebrow'
 import { Rule } from '@/components/ui/Rule'
-import type { HomepageCopy } from '@/content/homepage'
+import type { HomepageContent } from '@/lib/payload/queries'
 
 interface WhySHEProps {
-  copy: HomepageCopy['whySHE']
+  copy: HomepageContent['whySHE']
 }
 
 export function WhySHE({ copy }: WhySHEProps) {
