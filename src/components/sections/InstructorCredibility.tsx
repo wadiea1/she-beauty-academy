@@ -4,6 +4,7 @@ import { Heading } from '@/components/ui/Heading'
 import { Text } from '@/components/ui/Text'
 import { Eyebrow } from '@/components/ui/Eyebrow'
 import { ImageFrame } from '@/components/ui/ImageFrame'
+import { Reveal } from '@/components/motion/Reveal'
 import type { HomepageContent } from '@/lib/payload/queries'
 
 interface InstructorCredibilityProps {
@@ -27,20 +28,28 @@ export function InstructorCredibility({ copy }: InstructorCredibilityProps) {
           </div>
 
           <div className="lg:col-span-7">
-            <Eyebrow>{copy.eyebrow}</Eyebrow>
-            <Heading as="h2" size="lg" className="mt-4 mb-2 max-w-lg">
-              {copy.heading}
-            </Heading>
-            <Text size="sm" tone="muted" className="mb-6 font-medium">
-              {copy.role}
-            </Text>
-            <div className="flex flex-col gap-4">
-              {copy.bio.map((paragraph) => (
-                <Text key={paragraph} size="lg">
-                  {paragraph}
-                </Text>
-              ))}
-            </div>
+            <Reveal y={0}>
+              <Eyebrow>{copy.eyebrow}</Eyebrow>
+            </Reveal>
+            <Reveal delay={0.05}>
+              <Heading as="h2" size="lg" className="mt-4 mb-2 max-w-lg">
+                {copy.heading}
+              </Heading>
+            </Reveal>
+            <Reveal delay={0.1}>
+              <Text size="sm" tone="muted" className="mb-6 font-medium">
+                {copy.role}
+              </Text>
+            </Reveal>
+            <Reveal delay={0.15} y={12}>
+              <div className="flex flex-col gap-4">
+                {copy.bio.map((paragraph) => (
+                  <Text key={paragraph} size="lg">
+                    {paragraph}
+                  </Text>
+                ))}
+              </div>
+            </Reveal>
           </div>
         </div>
       </Container>

@@ -5,6 +5,7 @@ import { Text } from '@/components/ui/Text'
 import { Eyebrow } from '@/components/ui/Eyebrow'
 import { Button } from '@/components/ui/Button'
 import { ImageFrame } from '@/components/ui/ImageFrame'
+import { Reveal } from '@/components/motion/Reveal'
 import type { HomepageContent } from '@/lib/payload/queries'
 
 interface HeroProps {
@@ -27,16 +28,24 @@ export function Hero({ copy, ctaLabel }: HeroProps) {
       <Container width="editorial">
         <div className="grid items-center gap-12 lg:grid-cols-12 lg:gap-8">
           <div className="lg:col-span-7">
-            <Eyebrow>{copy.eyebrow}</Eyebrow>
-            <Heading as="h1" size="display" className="mt-6 max-w-2xl">
-              {copy.heading}
-            </Heading>
-            <Text size="lg" className="mt-6 max-w-lg">
-              {copy.lead}
-            </Text>
-            <Button href="#apply" size="lg" className="mt-8">
-              {ctaLabel}
-            </Button>
+            <Reveal delay={0}>
+              <Eyebrow>{copy.eyebrow}</Eyebrow>
+            </Reveal>
+            <Reveal delay={0.1}>
+              <Heading as="h1" size="display" className="mt-6 max-w-2xl">
+                {copy.heading}
+              </Heading>
+            </Reveal>
+            <Reveal delay={0.2}>
+              <Text size="lg" className="mt-6 max-w-lg">
+                {copy.lead}
+              </Text>
+            </Reveal>
+            <Reveal delay={0.3}>
+              <Button href="#apply" size="lg" className="mt-8">
+                {ctaLabel}
+              </Button>
+            </Reveal>
           </div>
 
           <div className="lg:col-span-5">
@@ -45,6 +54,7 @@ export function Hero({ copy, ctaLabel }: HeroProps) {
               src={copy.image.src}
               alt={copy.image.alt}
               priority
+              revealDelay={0.15}
               className="max-w-sm lg:ms-auto"
             />
           </div>

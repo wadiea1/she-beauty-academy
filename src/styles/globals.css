@@ -71,3 +71,39 @@ body {
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
+
+/*
+ * Reduced motion (Milestone E). The section-reveal/ImageFrame components
+ * already check useReducedMotion() in JS and skip animating entirely —
+ * this CSS rule is the SSR-safe backstop for the narrow window that JS
+ * check can't cover: useReducedMotion() reads `null` (there's no
+ * matchMedia on the server), so the *server-rendered* HTML always bakes
+ * in each element's pre-animation `initial` style regardless of the
+ * real client preference. `!important` here is required to outrank
+ * that inline `style` attribute; motion-reduce:* utilities applied
+ * directly on the affected elements are the actual mechanism (see
+ * src/components/motion/), this is only the belt for the same buckle.
+ * See docs/IMPLEMENTATION_PLAN.md, Milestone E.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .thread-path {
+    stroke-dashoffset: 0 !important;
+  }
+
+  /* Standard broad reset for the plain-CSS hover/focus micro-
+   * interactions (Button's lift, the nav underline, CourseCard's
+   * shadow, FAQ's +/× rotation, footer icon scale): near-zero duration
+   * keeps every state change instant rather than animated, without
+   * having to hand-annotate each one individually. Motion-driven
+   * elements (Reveal, StaggerItem, ImageFrame, Thread) animate via
+   * JS/WAAPI, not the CSS `transition` property, so this rule doesn't
+   * reach them — they're handled by useReducedMotion() branches plus
+   * their own motion-reduce:* utilities instead. */
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
