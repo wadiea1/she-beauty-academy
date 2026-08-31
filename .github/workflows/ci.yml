@@ -1,0 +1,65 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+# Cancel superseded runs on the same branch/PR instead of letting them
+# queue up and burn CI minutes.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint-and-build:
+    name: Lint & Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Must run before actions/setup-node so its pnpm-store cache step can
+      # find pnpm on PATH.
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.22.0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Build
+        run: pnpm build
+        env:
+          # Safe, non-secret CI placeholders — not real credentials.
+          # `next build` never connects to Postgres today: nothing here is
+          # statically generated from Payload's local API yet (the
+          # homepage is static content, and /admin + /api are dynamic
+          # routes that aren't executed at build time). Verified locally
+          # by building with these exact fake values before this workflow
+          # was added.
+          #
+          # This will need to change once Milestone G makes the public
+          # site read from Payload for statically generated pages — at
+          # that point this job will need either a real `postgres:`
+          # service container, or those routes will need to move to
+          # on-demand rendering.
+          #
+          # A real deployment (not this CI build) needs DATABASE_URI and
+          # PAYLOAD_SECRET as actual secret values — add those under
+          # Settings > Secrets and variables > Actions in this repo when
+          # that's set up, never committed here.
+          DATABASE_URI: postgresql://postgres:postgres@localhost:5432/she_academy_ci
+          PAYLOAD_SECRET: ci-placeholder-secret-not-for-production-use
+          NEXT_PUBLIC_SERVER_URL: http://localhost:3000
