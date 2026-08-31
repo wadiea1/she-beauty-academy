@@ -68,6 +68,11 @@ export interface Config {
   blocks: {};
   collections: {
     users: User;
+    media: Media;
+    courses: Course;
+    faqs: Faq;
+    testimonials: Testimonial;
+    applications: Application;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -76,6 +81,11 @@ export interface Config {
   collectionsJoins: {};
   collectionsSelect: {
     users: UsersSelect<false> | UsersSelect<true>;
+    media: MediaSelect<false> | MediaSelect<true>;
+    courses: CoursesSelect<false> | CoursesSelect<true>;
+    faqs: FaqsSelect<false> | FaqsSelect<true>;
+    testimonials: TestimonialsSelect<false> | TestimonialsSelect<true>;
+    applications: ApplicationsSelect<false> | ApplicationsSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -85,8 +95,16 @@ export interface Config {
     defaultIDType: number;
   };
   fallbackLocale: ('false' | 'none' | 'null') | false | null | ('ar' | 'he' | 'en') | ('ar' | 'he' | 'en')[];
-  globals: {};
-  globalsSelect: {};
+  globals: {
+    'site-settings': SiteSetting;
+    navigation: Navigation;
+    homepage: Homepage;
+  };
+  globalsSelect: {
+    'site-settings': SiteSettingsSelect<false> | SiteSettingsSelect<true>;
+    navigation: NavigationSelect<false> | NavigationSelect<true>;
+    homepage: HomepageSelect<false> | HomepageSelect<true>;
+  };
   locale: 'ar' | 'he' | 'en';
   widgets: {
     collections: CollectionsWidget;
@@ -141,6 +159,244 @@ export interface User {
   collection: 'users';
 }
 /**
+ * Photos and other files used across the site.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "media".
+ */
+export interface Media {
+  id: number;
+  /**
+   * Describes the image for screen readers and SEO — required in every language.
+   */
+  alt: string;
+  /**
+   * Optional visible caption, if the image needs one.
+   */
+  caption?: string | null;
+  updatedAt: string;
+  createdAt: string;
+  url?: string | null;
+  thumbnailURL?: string | null;
+  filename?: string | null;
+  mimeType?: string | null;
+  filesize?: number | null;
+  width?: number | null;
+  height?: number | null;
+  focalX?: number | null;
+  focalY?: number | null;
+}
+/**
+ * The academy's current courses.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "courses".
+ */
+export interface Course {
+  id: number;
+  /**
+   * Published courses appear on the public site. All three languages are required to publish.
+   */
+  status: 'draft' | 'published';
+  /**
+   * Lower numbers show first.
+   */
+  order?: number | null;
+  /**
+   * URL-friendly identifier, e.g. "cosmetics-1". Shared across all locales — not translated.
+   */
+  slug: string;
+  title: string;
+  /**
+   * Used on course cards and listings.
+   */
+  shortDescription: string;
+  /**
+   * Full description for the course detail page.
+   */
+  description?: string | null;
+  heroImage?: (number | null) | Media;
+  /**
+   * Additional photos for the course detail page.
+   */
+  gallery?:
+    | {
+        image: number | Media;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Who this course is for.
+   */
+  audience?: string | null;
+  /**
+   * Optional override for the course card button. Leave blank for the site default.
+   */
+  ctaLabel?: string | null;
+  /**
+   * Modules or stages of the course.
+   */
+  curriculum?:
+    | {
+        title: string;
+        description?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * What a student leaves with.
+   */
+  outcomes?:
+    | {
+        text: string;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Pricing is not finalized — "On request" is the safe default.
+   */
+  pricingType: 'exact' | 'startingFrom' | 'range' | 'onRequest' | 'hidden';
+  /**
+   * The exact price, or the "starting from" amount.
+   */
+  price?: number | null;
+  priceRangeMin?: number | null;
+  priceRangeMax?: number | null;
+  currency?: ('ILS' | 'USD') | null;
+  /**
+   * Freeform, e.g. "6 weeks". Leave blank if not finalized.
+   */
+  duration?: string | null;
+  /**
+   * Freeform schedule details, once finalized.
+   */
+  scheduleInfo?: string | null;
+  enrollmentState: 'open' | 'closed' | 'comingSoon' | 'full';
+  metaTitle?: string | null;
+  metaDescription?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Frequently asked questions shown on the homepage (and, later, course pages).
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "faqs".
+ */
+export interface Faq {
+  id: number;
+  status: 'draft' | 'published';
+  /**
+   * Lower numbers show first.
+   */
+  order?: number | null;
+  /**
+   * Optional — leave blank for a general FAQ shown on the homepage.
+   */
+  relatedCourse?: (number | null) | Course;
+  question: string;
+  answer: string;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Real testimonials only, with explicit consent. Leave this collection empty rather than publish anything unverified.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "testimonials".
+ */
+export interface Testimonial {
+  id: number;
+  status: 'draft' | 'published';
+  /**
+   * Required before publishing: confirm the person agreed to have their words used publicly.
+   */
+  consentObtained: boolean;
+  /**
+   * How/when consent was obtained, e.g. "Written consent via email, 2026-01-14".
+   */
+  consentNote?: string | null;
+  relatedCourse?: (number | null) | Course;
+  /**
+   * A real name — never invented. Not localized (it is a proper noun).
+   */
+  authorName: string;
+  /**
+   * e.g. "Cosmetics 1 graduate" — optional.
+   */
+  authorRole?: string | null;
+  quote: string;
+  photo?: (number | null) | Media;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Leads from the website. Never publicly readable.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "applications".
+ */
+export interface Application {
+  id: number;
+  status:
+    | 'new'
+    | 'automatic_followup'
+    | 'engaged'
+    | 'qualified'
+    | 'consultation_booked'
+    | 'visited'
+    | 'enrolled'
+    | 'no_answer'
+    | 'follow_up'
+    | 'not_now'
+    | 'not_interested'
+    | 'invalid'
+    | 'spam';
+  /**
+   * Staff member handling this lead.
+   */
+  assignedTo?: (number | null) | User;
+  /**
+   * Scheduled consultation or visit, once booked.
+   */
+  consultationAt?: string | null;
+  /**
+   * e.g. "homepage", "instagram", "referral".
+   */
+  source?: string | null;
+  name: string;
+  phone: string;
+  email?: string | null;
+  preferredLanguage: 'ar' | 'he' | 'en';
+  interestedCourse?: (number | null) | Course;
+  /**
+   * The lead's own message, as submitted.
+   */
+  message?: string | null;
+  /**
+   * Staff-only notes — never shown to the lead.
+   */
+  internalNotes?: string | null;
+  utmSource?: string | null;
+  utmMedium?: string | null;
+  utmCampaign?: string | null;
+  /**
+   * When the lead agreed to the privacy policy.
+   */
+  privacyConsentAt: string;
+  /**
+   * Which privacy policy version was in effect, e.g. "v1".
+   */
+  privacyPolicyVersion?: string | null;
+  /**
+   * Separate, optional opt-in — never bundled with the privacy consent above.
+   */
+  marketingConsent?: boolean | null;
+  marketingConsentAt?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
@@ -163,10 +419,31 @@ export interface PayloadKv {
  */
 export interface PayloadLockedDocument {
   id: number;
-  document?: {
-    relationTo: 'users';
-    value: number | User;
-  } | null;
+  document?:
+    | ({
+        relationTo: 'users';
+        value: number | User;
+      } | null)
+    | ({
+        relationTo: 'media';
+        value: number | Media;
+      } | null)
+    | ({
+        relationTo: 'courses';
+        value: number | Course;
+      } | null)
+    | ({
+        relationTo: 'faqs';
+        value: number | Faq;
+      } | null)
+    | ({
+        relationTo: 'testimonials';
+        value: number | Testimonial;
+      } | null)
+    | ({
+        relationTo: 'applications';
+        value: number | Application;
+      } | null);
   globalSlug?: string | null;
   user: {
     relationTo: 'users';
@@ -233,6 +510,126 @@ export interface UsersSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "media_select".
+ */
+export interface MediaSelect<T extends boolean = true> {
+  alt?: T;
+  caption?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  url?: T;
+  thumbnailURL?: T;
+  filename?: T;
+  mimeType?: T;
+  filesize?: T;
+  width?: T;
+  height?: T;
+  focalX?: T;
+  focalY?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "courses_select".
+ */
+export interface CoursesSelect<T extends boolean = true> {
+  status?: T;
+  order?: T;
+  slug?: T;
+  title?: T;
+  shortDescription?: T;
+  description?: T;
+  heroImage?: T;
+  gallery?:
+    | T
+    | {
+        image?: T;
+        id?: T;
+      };
+  audience?: T;
+  ctaLabel?: T;
+  curriculum?:
+    | T
+    | {
+        title?: T;
+        description?: T;
+        id?: T;
+      };
+  outcomes?:
+    | T
+    | {
+        text?: T;
+        id?: T;
+      };
+  pricingType?: T;
+  price?: T;
+  priceRangeMin?: T;
+  priceRangeMax?: T;
+  currency?: T;
+  duration?: T;
+  scheduleInfo?: T;
+  enrollmentState?: T;
+  metaTitle?: T;
+  metaDescription?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "faqs_select".
+ */
+export interface FaqsSelect<T extends boolean = true> {
+  status?: T;
+  order?: T;
+  relatedCourse?: T;
+  question?: T;
+  answer?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "testimonials_select".
+ */
+export interface TestimonialsSelect<T extends boolean = true> {
+  status?: T;
+  consentObtained?: T;
+  consentNote?: T;
+  relatedCourse?: T;
+  authorName?: T;
+  authorRole?: T;
+  quote?: T;
+  photo?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "applications_select".
+ */
+export interface ApplicationsSelect<T extends boolean = true> {
+  status?: T;
+  assignedTo?: T;
+  consultationAt?: T;
+  source?: T;
+  name?: T;
+  phone?: T;
+  email?: T;
+  preferredLanguage?: T;
+  interestedCourse?: T;
+  message?: T;
+  internalNotes?: T;
+  utmSource?: T;
+  utmMedium?: T;
+  utmCampaign?: T;
+  privacyConsentAt?: T;
+  privacyPolicyVersion?: T;
+  marketingConsent?: T;
+  marketingConsentAt?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv_select".
  */
 export interface PayloadKvSelect<T extends boolean = true> {
@@ -270,6 +667,284 @@ export interface PayloadMigrationsSelect<T extends boolean = true> {
   batch?: T;
   updatedAt?: T;
   createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "site-settings".
+ */
+export interface SiteSetting {
+  id: number;
+  /**
+   * E.164 format without the leading "+", e.g. "9725XXXXXXXX".
+   */
+  whatsappNumber?: string | null;
+  /**
+   * Without the "@".
+   */
+  instagramHandle?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  /**
+   * Physical academy address, as it should be displayed per language.
+   */
+  address?: string | null;
+  /**
+   * Fallback metadata for pages that do not set their own.
+   */
+  defaultSeo?: {
+    metaTitle?: string | null;
+    metaDescription?: string | null;
+    ogImage?: (number | null) | Media;
+  };
+  _status?: ('draft' | 'published') | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "navigation".
+ */
+export interface Navigation {
+  id: number;
+  /**
+   * Reorder by dragging. Path can be an in-page anchor ("#courses"), a site path ("/courses"), or a full external URL.
+   */
+  items?:
+    | {
+        label: string;
+        path: string;
+        openInNewTab?: boolean | null;
+        id?: string | null;
+      }[]
+    | null;
+  _status?: ('draft' | 'published') | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "homepage".
+ */
+export interface Homepage {
+  id: number;
+  hero: {
+    eyebrow: string;
+    heading: string;
+    lead: string;
+    image?: (number | null) | Media;
+  };
+  manifesto: {
+    eyebrow: string;
+    heading: string;
+    body: string;
+  };
+  whySHE: {
+    eyebrow: string;
+    heading: string;
+    pillars?:
+      | {
+          title: string;
+          body: string;
+          id?: string | null;
+        }[]
+      | null;
+  };
+  coursesIntro: {
+    eyebrow: string;
+    heading: string;
+    /**
+     * The course cards themselves come from the Courses collection.
+     */
+    intro: string;
+  };
+  insideAcademy: {
+    eyebrow: string;
+    heading: string;
+    body: string;
+    /**
+     * Aim for 4, for the mosaic grid layout.
+     */
+    images?:
+      | {
+          image: number | Media;
+          id?: string | null;
+        }[]
+      | null;
+  };
+  whatYouLeaveWith: {
+    eyebrow: string;
+    heading: string;
+    points?:
+      | {
+          text: string;
+          id?: string | null;
+        }[]
+      | null;
+  };
+  instructor: {
+    eyebrow: string;
+    heading: string;
+    role: string;
+    /**
+     * Keep the distinction from AGENTS.md §11 explicit: this experience belongs to the instructor's prior career, not to SHE itself.
+     */
+    bio?:
+      | {
+          paragraph: string;
+          id?: string | null;
+        }[]
+      | null;
+    photo?: (number | null) | Media;
+  };
+  faqIntro: {
+    eyebrow: string;
+    heading: string;
+  };
+  apply: {
+    eyebrow: string;
+    heading: string;
+    body: string;
+  };
+  _status?: ('draft' | 'published') | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "site-settings_select".
+ */
+export interface SiteSettingsSelect<T extends boolean = true> {
+  whatsappNumber?: T;
+  instagramHandle?: T;
+  email?: T;
+  phone?: T;
+  address?: T;
+  defaultSeo?:
+    | T
+    | {
+        metaTitle?: T;
+        metaDescription?: T;
+        ogImage?: T;
+      };
+  _status?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "navigation_select".
+ */
+export interface NavigationSelect<T extends boolean = true> {
+  items?:
+    | T
+    | {
+        label?: T;
+        path?: T;
+        openInNewTab?: T;
+        id?: T;
+      };
+  _status?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "homepage_select".
+ */
+export interface HomepageSelect<T extends boolean = true> {
+  hero?:
+    | T
+    | {
+        eyebrow?: T;
+        heading?: T;
+        lead?: T;
+        image?: T;
+      };
+  manifesto?:
+    | T
+    | {
+        eyebrow?: T;
+        heading?: T;
+        body?: T;
+      };
+  whySHE?:
+    | T
+    | {
+        eyebrow?: T;
+        heading?: T;
+        pillars?:
+          | T
+          | {
+              title?: T;
+              body?: T;
+              id?: T;
+            };
+      };
+  coursesIntro?:
+    | T
+    | {
+        eyebrow?: T;
+        heading?: T;
+        intro?: T;
+      };
+  insideAcademy?:
+    | T
+    | {
+        eyebrow?: T;
+        heading?: T;
+        body?: T;
+        images?:
+          | T
+          | {
+              image?: T;
+              id?: T;
+            };
+      };
+  whatYouLeaveWith?:
+    | T
+    | {
+        eyebrow?: T;
+        heading?: T;
+        points?:
+          | T
+          | {
+              text?: T;
+              id?: T;
+            };
+      };
+  instructor?:
+    | T
+    | {
+        eyebrow?: T;
+        heading?: T;
+        role?: T;
+        bio?:
+          | T
+          | {
+              paragraph?: T;
+              id?: T;
+            };
+        photo?: T;
+      };
+  faqIntro?:
+    | T
+    | {
+        eyebrow?: T;
+        heading?: T;
+      };
+  apply?:
+    | T
+    | {
+        eyebrow?: T;
+        heading?: T;
+        body?: T;
+      };
+  _status?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

@@ -2,13 +2,23 @@ import { postgresAdapter } from '@payloadcms/db-postgres'
 import { buildConfig } from 'payload'
 
 import { Users } from './collections/Users'
+import { Media } from './collections/Media'
+import { Courses } from './collections/Courses'
+import { FAQs } from './collections/FAQs'
+import { Testimonials } from './collections/Testimonials'
+import { Applications } from './collections/Applications'
+import { SiteSettings } from './globals/SiteSettings'
+import { Navigation } from './globals/Navigation'
+import { Homepage } from './globals/Homepage'
 
 export default buildConfig({
   admin: {
     user: Users.slug,
   },
 
-  collections: [Users],
+  collections: [Users, Media, Courses, FAQs, Testimonials, Applications],
+
+  globals: [SiteSettings, Navigation, Homepage],
 
   localization: {
     locales: [

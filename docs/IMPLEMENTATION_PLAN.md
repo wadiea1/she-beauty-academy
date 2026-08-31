@@ -56,6 +56,20 @@ and status is this file plus `git log`.
 - **Button**: kept in the same `Record<Variant, string>` pattern as the
   other primitives (no CVA — not enough variant complexity to justify the
   dependency).
+- **Payload content model (Milestone F)**: no rich-text editor installed
+  (`@payloadcms/richtext-lexical` isn't a dependency) — long-form fields
+  use plain `textarea`. Deliberate scope decision for a data-model-only
+  milestone, not an oversight; revisit if editorial needs demand inline
+  formatting once Milestone G wires content into the frontend. Tabs are
+  unnamed (visual grouping, flat data) on Courses/FAQs/Testimonials/
+  Applications, but named (nested data) on the `Homepage` global, to
+  mirror `HomepageCopy`'s per-section shape. Publish gating
+  (`requireAllLocalesToPublish`) is real, tested end-to-end via the Local
+  API (not just admin eyeballing) — a genuine bug was found and fixed in
+  it during that verification (see the "add media and course content
+  models" commit for details): never thread the current request's `req`
+  into a hook's own nested `findByID` call on the same document, it
+  corrupts the outer write.
 
 ## Milestones
 
@@ -77,13 +91,22 @@ and status is this file plus `git log`.
 - [ ] **E — Motion system incl. "The Thread"**: Motion/Framer for standard
       component animation, restrained scroll-linked SVG thread signature,
       `prefers-reduced-motion` respected throughout.
-- [ ] **F — Payload collections/globals**: `Courses`, `FAQs`,
-      `Applications`, `Testimonials`, `Media`; globals `SiteSettings`,
-      `Navigation`, `Homepage`. Seed the 3 real courses (Cosmetics 1,
-      Cosmetics 2, Branding & AI for Beauty Businesses) — no invented
-      courses.
+- [x] **F — Payload collections/globals**: `Media`, `Courses`, `FAQs`,
+      `Testimonials` (architecture only, no seeded records), `Applications`
+      (leads, staff-only access); globals `SiteSettings`, `Navigation`,
+      `Homepage`. Branch `feat/payload-content-model`. Course/FAQ/
+      Testimonial `status` publishing is gated by a shared
+      `requireAllLocalesToPublish` hook (`src/collections/hooks/`) — can't
+      publish with a missing ar/he/en translation, per AGENTS.md §5. Real
+      course records (Cosmetics 1, Cosmetics 2, Branding & AI for Beauty
+      Businesses) are not yet seeded — that's Milestone G, once the
+      frontend is ready to read them.
 - [ ] **G — Connect public site to Payload** content instead of hardcoded
-      placeholders.
+      placeholders. Seed the 3 real courses at that point. Watch for CI
+      impact: once pages statically generate from Payload data, the CI
+      workflow's fake DB credentials (`.github/workflows/ci.yml`) will
+      need either a real `postgres:` service container or those routes
+      moving to on-demand rendering.
 - [ ] **H — Course listing/detail pages**.
 - [ ] **I — Lead/application flow** (Zod validation, spam protection,
       privacy/marketing consent kept separate).

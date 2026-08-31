@@ -36,6 +36,10 @@ yarn-error.log*
 # vercel
 .vercel
 
+# Payload media uploads (local disk storage) — real photography and any
+# other uploaded files never belong in git.
+/media
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
