@@ -1,26 +1,51 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+@theme {
+  /* Palette */
+  --color-porcelain: #FBF8F6;
+  --color-shell: #F3EAE5;
+  --color-blush: #E8D5CD;
+  --color-champagne: #C8AEA4;
+  --color-rosewood: #998077;
+  --color-rosewood-ink: #7A6259;
+  --color-cocoa: #4A382F;
+  --color-ink: #241B16;
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+  /* Section spacing */
+  --spacing-section-sm: clamp(64px, 9vh, 96px);
+  --spacing-section: clamp(96px, 12vh, 180px);
+  --spacing-section-lg: clamp(120px, 16vh, 240px);
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  /* Container widths */
+  --container-editorial: 76rem;
+  --container-reading: 42rem;
+
+  /* Corner radii */
+  --radius-hairline: 2px;
+  --radius-panel: 4px;
+
+/* Type — resolved per locale in Phase 4 */
+  --font-body: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-display: ui-serif, Georgia, "Times New Roman", serif;
+
+  /* Type scale */
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.375rem;
+  --text-2xl: 1.75rem;
+  --text-3xl: 2.25rem;
+  --text-4xl: 3rem;
+  --text-5xl: clamp(3.25rem, 5vw, 4.5rem);
+  --text-6xl: clamp(3.5rem, 7vw, 6rem);
+
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: var(--color-porcelain);
+  color: var(--color-cocoa);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
