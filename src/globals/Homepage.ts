@@ -1,5 +1,6 @@
 import type { GlobalConfig } from 'payload'
 import { requireHomepageLocalesToPublish } from './hooks/requireHomepageLocalesToPublish'
+import { publishedOnlyAccess } from './publishedOnlyAccess'
 
 /**
  * Homepage editorial content, one named tab per section — matching
@@ -27,11 +28,12 @@ export const Homepage: GlobalConfig = {
   label: 'Homepage',
   versions: { drafts: true },
   access: {
-    read: () => true,
-    // Draft/version content only to authenticated staff — public reads
-    // (no `draft: true` requested) already only ever see the published
-    // version, but this closes the edge case of someone explicitly
-    // requesting draft state via the API.
+    // Gates BOTH the normal read and, critically, an anonymous
+    // `draft: true` request — see publishedOnlyAccess.ts for why
+    // `readVersions` alone doesn't do this.
+    read: publishedOnlyAccess,
+    // Governs the separate version-history endpoints (admin's "Version
+    // History" panel) — real, but not what stops a draft:true leak.
     readVersions: ({ req }) => Boolean(req.user),
     update: ({ req }) => Boolean(req.user),
   },

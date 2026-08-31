@@ -1,5 +1,6 @@
 import type { GlobalConfig } from 'payload'
 import { requireNavigationLocalesToPublish } from './hooks/requireNavigationLocalesToPublish'
+import { publishedOnlyAccess } from './publishedOnlyAccess'
 
 /**
  * The site's navigation structure — which links exist and in what order.
@@ -17,7 +18,7 @@ export const Navigation: GlobalConfig = {
   label: 'Navigation',
   versions: { drafts: true },
   access: {
-    read: () => true,
+    read: publishedOnlyAccess,
     readVersions: ({ req }) => Boolean(req.user),
     update: ({ req }) => Boolean(req.user),
   },

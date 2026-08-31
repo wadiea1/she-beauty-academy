@@ -1,4 +1,5 @@
 import type { GlobalConfig } from 'payload'
+import { publishedOnlyAccess } from './publishedOnlyAccess'
 
 /**
  * Business/contact info, editable by staff without a code deploy. This is
@@ -20,7 +21,7 @@ export const SiteSettings: GlobalConfig = {
   label: 'Site Settings',
   versions: { drafts: true },
   access: {
-    read: () => true,
+    read: publishedOnlyAccess,
     readVersions: ({ req }) => Boolean(req.user),
     update: ({ req }) => Boolean(req.user),
   },
