@@ -7,12 +7,21 @@ import type { GlobalConfig } from 'payload'
  * does not duplicate UI chrome strings (nav labels, button microcopy):
  * those stay in the static i18n dictionaries as interface vocabulary, not
  * business content.
+ *
+ * Native drafts for the same "don't leak a half-finished edit" safety as
+ * Homepage/Navigation, but deliberately no locale-completeness publish
+ * gate: every field here (WhatsApp, phone, address, default SEO, …) is
+ * legitimately optional, so there is nothing that would leave the public
+ * site "visibly broken" if a locale is blank — nothing meets the bar for
+ * gating, per the same principle applied to Homepage/Navigation.
  */
 export const SiteSettings: GlobalConfig = {
   slug: 'site-settings',
   label: 'Site Settings',
+  versions: { drafts: true },
   access: {
     read: () => true,
+    readVersions: ({ req }) => Boolean(req.user),
     update: ({ req }) => Boolean(req.user),
   },
   fields: [

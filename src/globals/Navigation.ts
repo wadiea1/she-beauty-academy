@@ -1,4 +1,5 @@
 import type { GlobalConfig } from 'payload'
+import { requireNavigationLocalesToPublish } from './hooks/requireNavigationLocalesToPublish'
 
 /**
  * The site's navigation structure — which links exist and in what order.
@@ -6,13 +7,22 @@ import type { GlobalConfig } from 'payload'
  * stay in the static i18n dictionaries; this manages actual link content,
  * which genuinely changes as pages are added (Milestone H course pages,
  * etc.).
+ *
+ * Native drafts, same rationale as Homepage: public reads always get the
+ * last-published version, and requireNavigationLocalesToPublish blocks
+ * publishing while any item is missing a label in ar/he/en.
  */
 export const Navigation: GlobalConfig = {
   slug: 'navigation',
   label: 'Navigation',
+  versions: { drafts: true },
   access: {
     read: () => true,
+    readVersions: ({ req }) => Boolean(req.user),
     update: ({ req }) => Boolean(req.user),
+  },
+  hooks: {
+    beforeChange: [requireNavigationLocalesToPublish],
   },
   fields: [
     {

@@ -696,6 +696,7 @@ export interface SiteSetting {
     metaDescription?: string | null;
     ogImage?: (number | null) | Media;
   };
+  _status?: ('draft' | 'published') | null;
   updatedAt?: string | null;
   createdAt?: string | null;
 }
@@ -716,6 +717,7 @@ export interface Navigation {
         id?: string | null;
       }[]
     | null;
+  _status?: ('draft' | 'published') | null;
   updatedAt?: string | null;
   createdAt?: string | null;
 }
@@ -803,6 +805,7 @@ export interface Homepage {
     heading: string;
     body: string;
   };
+  _status?: ('draft' | 'published') | null;
   updatedAt?: string | null;
   createdAt?: string | null;
 }
@@ -823,6 +826,7 @@ export interface SiteSettingsSelect<T extends boolean = true> {
         metaDescription?: T;
         ogImage?: T;
       };
+  _status?: T;
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;
@@ -840,6 +844,7 @@ export interface NavigationSelect<T extends boolean = true> {
         openInNewTab?: T;
         id?: T;
       };
+  _status?: T;
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;
@@ -936,6 +941,7 @@ export interface HomepageSelect<T extends boolean = true> {
         heading?: T;
         body?: T;
       };
+  _status?: T;
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;

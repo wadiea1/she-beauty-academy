@@ -1,4 +1,5 @@
 import type { GlobalConfig } from 'payload'
+import { requireHomepageLocalesToPublish } from './hooks/requireHomepageLocalesToPublish'
 
 /**
  * Homepage editorial content, one named tab per section — matching
@@ -11,13 +12,31 @@ import type { GlobalConfig } from 'payload'
  * The course list itself is NOT duplicated here — it comes from the
  * Courses collection. Same for FAQ items (FAQs collection); this only
  * holds each section's short intro copy.
+ *
+ * Native drafts (versions.drafts) rather than a custom status field: a
+ * global is a singleton, so "draft" here means "the last edit hasn't
+ * been published yet" — reads without `draft: true` (i.e. the public
+ * frontend, once Milestone G wires it up) always get the last-published
+ * version, so a half-translated in-progress edit can never leak to
+ * visitors. Draft saves skip required-field validation by design;
+ * requireHomepageLocalesToPublish below is what actually gates the
+ * transition to published on locale completeness.
  */
 export const Homepage: GlobalConfig = {
   slug: 'homepage',
   label: 'Homepage',
+  versions: { drafts: true },
   access: {
     read: () => true,
+    // Draft/version content only to authenticated staff — public reads
+    // (no `draft: true` requested) already only ever see the published
+    // version, but this closes the edge case of someone explicitly
+    // requesting draft state via the API.
+    readVersions: ({ req }) => Boolean(req.user),
     update: ({ req }) => Boolean(req.user),
+  },
+  hooks: {
+    beforeChange: [requireHomepageLocalesToPublish],
   },
   fields: [
     {
