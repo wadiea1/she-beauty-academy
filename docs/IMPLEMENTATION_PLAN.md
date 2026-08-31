@@ -136,33 +136,66 @@ and status is this file plus `git log`.
         Payload would make the CMS a presentation-configuration store,
         which AGENTS.md explicitly rules out.
 
-      **Rendering strategy**: time-based ISR (`revalidate`), not
-      build-time SSG and not fully dynamic per-request rendering. Chosen
-      because this is a CMS-driven marketing site where staff expect a
-      publish to go live without a redeploy — build-time-only SSG fails
-      that expectation, while full per-request dynamic rendering pays a
-      DB round-trip for every visitor for content that changes at a
-      human editing pace. ISR gets both: fast cached responses, content
-      reflects a publish within the revalidate window. `generateStaticParams`
-      is removed from the locale segment so nothing is prerendered at
-      build time — `next build` therefore still needs no live database
-      access, which is a side effect of the architecture being right for
-      this site, not the reason it was chosen; documented in the CI
-      workflow and the Milestone G PR.
+      **Rendering strategy**: time-based caching of the CMS data itself
+      (60s), not build-time SSG and not uncached per-request rendering.
+      Chosen because this is a CMS-driven marketing site where staff
+      expect a publish to go live without a redeploy — build-time-only
+      SSG fails that expectation, while an uncached fetch on every
+      request pays a DB round-trip per visitor for content that changes
+      at a human editing pace. `generateStaticParams` is removed from
+      the locale segment so nothing is prerendered at build time —
+      `next build` needs no live database access as a result, a side
+      effect of the architecture being right for this site, not the
+      reason it was chosen.
+      **Correction, found by testing the real production server rather
+      than trusting the design**: the first implementation relied on
+      `export const revalidate = 60` in `layout.tsx` alone, with no
+      `generateStaticParams`. A production-server test (publish a
+      distinguishable value, request immediately) showed this cached
+      *nothing* — the very next request already reflected the new
+      value. Per Next.js's own docs (Caching and Revalidating, Previous
+      Model — the model this project is on, not the newer opt-in Cache
+      Components), route-segment `revalidate` governs `fetch()` caching
+      and ISR for routes prerendered via `generateStaticParams`; this
+      project has neither (Payload's Local API isn't `fetch()`, and
+      there's no `generateStaticParams`). Fixed by wrapping every query
+      in `src/lib/payload/queries.ts` with `unstable_cache` (the
+      documented mechanism "for non-fetch functions"), `revalidate: 60`
+      each. Re-tested the same way and confirmed real stale-while-
+      revalidate behavior this time: immediate requests after a publish
+      stay stale, the first request after the window may still return
+      stale content while regenerating in the background (confirmed via
+      a fast response time), and a follow-up request afterward reflects
+      the new value — exactly the documented semantics. The
+      `revalidate = 60` export stays in `layout.tsx` as a harmless
+      declaration of intent; the actual caching lives in the query
+      layer.
       **Query architecture**: `src/lib/payload/` — a memoized
-      (`react cache()`) Payload client plus one function per content
-      need (`getHomepage`, `getPublishedCourses`, `getPublishedFAQs`,
-      `getNavigation`, `getSiteSettings`), each mapping raw Payload
-      shapes onto the existing `HomepageCopy`-compatible types so the
-      section components built in Milestone D need no changes. No
-      `overrideAccess`, no `draft: true` — these exercise the exact
-      published-only access boundary hardened in Milestone F/PR #3.
-      Missing *required* Homepage content (e.g. an unseeded database)
-      throws a clear error rather than silently rendering wrong-language
-      or blank content; missing Courses/FAQs render their section with
-      no items rather than failing the page, since a genuinely empty
-      list is a valid state for a list, not for the homepage's narrative
-      spine.
+      (`react cache()`) Payload client plus one `unstable_cache`-wrapped
+      function per content need (`getHomepage`, `getPublishedCourses`,
+      `getPublishedFAQs`, `getNavigation`, `getSiteSettings`), each
+      mapping raw Payload shapes onto the existing `HomepageCopy`-
+      compatible types so the section components built in Milestone D
+      need no changes. No `overrideAccess`, no `draft: true` — these
+      exercise the exact published-only access boundary hardened in
+      Milestone F/PR #3. Missing *required* Homepage content (e.g. an
+      unseeded database) throws a clear error rather than silently
+      rendering wrong-language or blank content; missing Courses/FAQs
+      render their section with no items rather than failing the page,
+      since a genuinely empty list is a valid state for a list, not for
+      the homepage's narrative spine.
+      **Seed non-destructiveness**: `pnpm seed` is a bootstrap
+      mechanism, not a sync engine — Courses/FAQs are created only if
+      their stable key doesn't exist yet (otherwise skipped untouched);
+      Homepage/Navigation are only (re)seeded when they look
+      uninitialized (never published, or still showing the literal
+      `[[PLACEHOLDER` marker from Milestone F) — real content, seeded or
+      editor-written, is left alone. `pnpm seed -- force` (positional
+      `force`, not a `--force` flag — Payload's CLI parses args with
+      minimist before forwarding anything to the script, and a
+      dash-flag never reaches it; verified by testing both forms
+      directly) explicitly overwrites. Testimonials and Users/admin are
+      never touched either way.
 - [ ] **H — Course listing/detail pages**.
 - [ ] **I — Lead/application flow** (Zod validation, spam protection,
       privacy/marketing consent kept separate).

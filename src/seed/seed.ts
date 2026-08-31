@@ -1,4 +1,5 @@
-// Idempotent Payload content seed. Run with:
+// Payload content seed — a BOOTSTRAP mechanism, not a synchronization
+// engine. Run with:
 //   pnpm seed
 // (or directly: pnpm exec payload run src/seed/seed.ts)
 //
@@ -8,14 +9,39 @@
 // re-runnable even after that file is retired. Not a new copywriting
 // pass: every string here is exactly what was already on the page.
 //
-// Safe to run repeatedly: Courses/FAQs are matched by a stable,
-// non-localized key (slug / order) before creating, so re-running never
-// duplicates records. Homepage/Navigation are singleton globals —
-// re-applying the same values is inherently idempotent — but their
-// array sub-fields (pillars, points, bio, images, nav items) need their
-// row ids threaded across the three locale-scoped update calls, or each
-// locale would create its own duplicate set of rows instead of filling
-// in the same one (see attachIds below).
+// SAFE BY DEFAULT: once Payload is the real source of truth, an editor's
+// changes must never be silently overwritten by a re-run of this script.
+//   - Courses/FAQs: creates a record only if its stable key (slug /
+//     order) doesn't exist yet. If it already exists, it is left
+//     completely untouched — no content, pricing, status, or media
+//     changes — and the run just logs that it was skipped.
+//   - Homepage/Navigation: seeded only when the global looks
+//     uninitialized (never published) or still shows the known
+//     placeholder marker from Milestone F ("[[PLACEHOLDER" — see
+//     isUninitializedHomepage/isUninitializedNavigation below). Once
+//     real content exists — seeded OR editor-written — it's left alone.
+//   - SiteSettings/Testimonials: never touched by this script at all;
+//     nothing here is ever invented.
+//
+// FORCE MODE: `pnpm seed -- force` explicitly overwrites existing
+// Courses/FAQs/Homepage/Navigation content with the seed data. Prints a
+// loud warning first. Never touches Users/admin accounts or
+// Testimonials/SiteSettings either way.
+//
+// Why `force` with no dashes, not `--force`: Payload's CLI parses
+// arguments with minimist before forwarding anything to this script —
+// verified by inspecting node_modules/payload/dist/bin/index.js and
+// testing both forms directly. A `--force`-style flag is consumed by
+// minimist as part of Payload's OWN argument parsing and never reaches
+// this script's process.argv at all; only plain positional arguments
+// (`args._.slice(2)`) are forwarded. `pnpm seed -- force` is what
+// actually works — confirmed empirically, not assumed.
+//
+// Known limitation: FAQs are matched by their `order` field (1-5) as a
+// stable, non-localized key. If an editor reorders FAQs in the admin,
+// a later default (non-force) run may not recognize an existing FAQ
+// against its original seed slot — acceptable for a bootstrap script,
+// not attempting to be a full sync engine.
 import { getPayload } from 'payload'
 import config from '../payload.config'
 import content from './content.json'
@@ -23,6 +49,8 @@ import { locales, type Locale } from '../i18n/config'
 
 type ContentShape = typeof content
 type LocaleContent = ContentShape[Locale]
+
+const PLACEHOLDER_MARKER = '[[PLACEHOLDER'
 
 const navLabels: Record<Locale, { home: string; courses: string; academy: string; faq: string }> = {
   ar: { home: 'الرئيسية', courses: 'الدورات', academy: 'عن الأكاديمية', faq: 'الأسئلة الشائعة' },
@@ -41,6 +69,20 @@ function attachIds<T extends object>(items: T[], existing: { id?: string | null 
     const id = existing?.[i]?.id
     return id ? ({ ...item, id } as T) : item
   })
+}
+
+function isUninitializedHomepage(doc: Record<string, unknown> | null): boolean {
+  if (!doc || !doc._status) return true // never published or never saved at all
+  const hero = doc.hero as Record<string, unknown> | undefined
+  const heading = typeof hero?.heading === 'string' ? hero.heading : ''
+  return heading.startsWith(PLACEHOLDER_MARKER)
+}
+
+function isUninitializedNavigation(doc: { items?: { label?: unknown }[] | null; _status?: string | null } | null): boolean {
+  if (!doc || !doc._status) return true
+  const items = doc.items ?? []
+  if (items.length === 0) return true
+  return items.some((item) => typeof item.label === 'string' && item.label.startsWith(PLACEHOLDER_MARKER))
 }
 
 function mapHomepageData(locale: Locale, existing: Record<string, unknown> | null) {
@@ -98,7 +140,18 @@ function mapHomepageData(locale: Locale, existing: Record<string, unknown> | nul
   }
 }
 
-async function upsertCourse(payload: Awaited<ReturnType<typeof getPayload>>, index: number) {
+async function publishCourseLocales(
+  payload: Awaited<ReturnType<typeof getPayload>>,
+  id: number,
+  dataFor: (locale: Locale) => { title: string; shortDescription: string },
+) {
+  for (const locale of locales) {
+    await payload.update({ collection: 'courses', id, locale, overrideAccess: true, data: dataFor(locale) })
+  }
+  await payload.update({ collection: 'courses', id, locale: 'en', overrideAccess: true, data: { status: 'published' } })
+}
+
+async function upsertCourse(payload: Awaited<ReturnType<typeof getPayload>>, index: number, force: boolean) {
   const slug = content.en.courses.items[index].slug
   const dataFor = (locale: Locale) => {
     const item = content[locale].courses.items[index]
@@ -112,42 +165,48 @@ async function upsertCourse(payload: Awaited<ReturnType<typeof getPayload>>, ind
     overrideAccess: true,
   })
 
-  let id: number
   if (existing.totalDocs > 0) {
-    id = existing.docs[0]!.id
-    console.log(`  Course "${slug}" already exists (id ${id}) — refreshing content.`)
-  } else {
-    const created = await payload.create({
-      collection: 'courses',
-      locale: 'ar',
-      overrideAccess: true,
-      data: {
-        slug,
-        status: 'draft',
-        order: index + 1,
-        pricingType: 'onRequest', // no real pricing exists — never fabricated
-        enrollmentState: 'open',
-        ...dataFor('ar'),
-      },
-    })
-    id = created.id
-    console.log(`  Course "${slug}" created (id ${id}).`)
+    const id = existing.docs[0]!.id
+    if (!force) {
+      console.log(`  Course "${slug}" already exists (id ${id}) — leaving it untouched. Skipped.`)
+      return
+    }
+    console.log(`  Course "${slug}" already exists (id ${id}) — FORCE MODE: overwriting with seed content.`)
+    await publishCourseLocales(payload, id, dataFor)
+    console.log(`  Course "${slug}" republished (force).`)
+    return
   }
 
-  for (const locale of locales) {
-    await payload.update({ collection: 'courses', id, locale, overrideAccess: true, data: dataFor(locale) })
-  }
-  await payload.update({
+  const created = await payload.create({
     collection: 'courses',
-    id,
-    locale: 'en',
+    locale: 'ar',
     overrideAccess: true,
-    data: { status: 'published' },
+    data: {
+      slug,
+      status: 'draft',
+      order: index + 1,
+      pricingType: 'onRequest', // no real pricing exists — never fabricated
+      enrollmentState: 'open',
+      ...dataFor('ar'),
+    },
   })
+  console.log(`  Course "${slug}" created (id ${created.id}).`)
+  await publishCourseLocales(payload, created.id, dataFor)
   console.log(`  Course "${slug}" published.`)
 }
 
-async function upsertFaq(payload: Awaited<ReturnType<typeof getPayload>>, index: number) {
+async function publishFaqLocales(
+  payload: Awaited<ReturnType<typeof getPayload>>,
+  id: number,
+  dataFor: (locale: Locale) => { question: string; answer: string },
+) {
+  for (const locale of locales) {
+    await payload.update({ collection: 'faqs', id, locale, overrideAccess: true, data: dataFor(locale) })
+  }
+  await payload.update({ collection: 'faqs', id, locale: 'en', overrideAccess: true, data: { status: 'published' } })
+}
+
+async function upsertFaq(payload: Awaited<ReturnType<typeof getPayload>>, index: number, force: boolean) {
   const orderValue = index + 1
   const dataFor = (locale: Locale) => {
     const item = content[locale].faq.items[index]
@@ -161,33 +220,45 @@ async function upsertFaq(payload: Awaited<ReturnType<typeof getPayload>>, index:
     overrideAccess: true,
   })
 
-  let id: number
   if (existing.totalDocs > 0) {
-    id = existing.docs[0]!.id
-    console.log(`  FAQ #${orderValue} already exists (id ${id}) — refreshing content.`)
-  } else {
-    const created = await payload.create({
-      collection: 'faqs',
-      locale: 'ar',
-      overrideAccess: true,
-      data: { status: 'draft', order: orderValue, ...dataFor('ar') },
-    })
-    id = created.id
-    console.log(`  FAQ #${orderValue} created (id ${id}).`)
+    const id = existing.docs[0]!.id
+    if (!force) {
+      console.log(`  FAQ #${orderValue} already exists (id ${id}) — leaving it untouched. Skipped.`)
+      return
+    }
+    console.log(`  FAQ #${orderValue} already exists (id ${id}) — FORCE MODE: overwriting with seed content.`)
+    await publishFaqLocales(payload, id, dataFor)
+    console.log(`  FAQ #${orderValue} republished (force).`)
+    return
   }
 
-  for (const locale of locales) {
-    await payload.update({ collection: 'faqs', id, locale, overrideAccess: true, data: dataFor(locale) })
-  }
-  await payload.update({ collection: 'faqs', id, locale: 'en', overrideAccess: true, data: { status: 'published' } })
+  const created = await payload.create({
+    collection: 'faqs',
+    locale: 'ar',
+    overrideAccess: true,
+    data: { status: 'draft', order: orderValue, ...dataFor('ar') },
+  })
+  console.log(`  FAQ #${orderValue} created (id ${created.id}).`)
+  await publishFaqLocales(payload, created.id, dataFor)
   console.log(`  FAQ #${orderValue} published.`)
 }
 
-async function seedHomepage(payload: Awaited<ReturnType<typeof getPayload>>) {
-  let existing: Record<string, unknown> | null = (await payload
+async function seedHomepage(payload: Awaited<ReturnType<typeof getPayload>>, force: boolean) {
+  const current = (await payload
     .findGlobal({ slug: 'homepage', draft: true, overrideAccess: true })
     .catch(() => null)) as unknown as Record<string, unknown> | null
 
+  if (!force && !isUninitializedHomepage(current)) {
+    console.log('  Homepage already has real content — leaving it untouched. Skipped.')
+    return
+  }
+  console.log(
+    force
+      ? '  FORCE MODE: overwriting Homepage with seed content.'
+      : '  Homepage looks uninitialized — bootstrapping with seed content.',
+  )
+
+  let existing = current
   for (const locale of locales) {
     const updated = await payload.updateGlobal({
       slug: 'homepage',
@@ -209,10 +280,20 @@ async function seedHomepage(payload: Awaited<ReturnType<typeof getPayload>>) {
   console.log('  Homepage published.')
 }
 
-async function seedNavigation(payload: Awaited<ReturnType<typeof getPayload>>) {
-  let existingItems: { id?: string | null }[] | undefined = (
-    await payload.findGlobal({ slug: 'navigation', draft: true, overrideAccess: true }).catch(() => null)
-  )?.items ?? undefined
+async function seedNavigation(payload: Awaited<ReturnType<typeof getPayload>>, force: boolean) {
+  const current = await payload.findGlobal({ slug: 'navigation', draft: true, overrideAccess: true }).catch(() => null)
+
+  if (!force && !isUninitializedNavigation(current)) {
+    console.log('  Navigation already has real content — leaving it untouched. Skipped.')
+    return
+  }
+  console.log(
+    force
+      ? '  FORCE MODE: overwriting Navigation with seed content.'
+      : '  Navigation looks uninitialized — bootstrapping with seed content.',
+  )
+
+  let existingItems: { id?: string | null }[] | undefined = current?.items ?? undefined
 
   for (const locale of locales) {
     const items = attachIds(
@@ -244,23 +325,33 @@ async function seedNavigation(payload: Awaited<ReturnType<typeof getPayload>>) {
 }
 
 async function main() {
+  const force = process.argv.includes('force')
   const payload = await getPayload({ config })
+
+  if (force) {
+    console.log('\n*** FORCE MODE — this will OVERWRITE existing Courses/FAQs/Homepage/Navigation ***')
+    console.log('*** content with seed data. Editor changes to those will be LOST.               ***')
+    console.log('*** Testimonials and Users/admin accounts are never touched, force or not.       ***\n')
+  } else {
+    console.log('Safe bootstrap mode (default): existing content is left untouched.')
+    console.log('Run `pnpm seed -- force` to overwrite existing content with seed data.\n')
+  }
 
   console.log('=== Seeding Courses ===')
   for (let i = 0; i < content.en.courses.items.length; i++) {
-    await upsertCourse(payload, i)
+    await upsertCourse(payload, i, force)
   }
 
   console.log('\n=== Seeding FAQs ===')
   for (let i = 0; i < content.en.faq.items.length; i++) {
-    await upsertFaq(payload, i)
+    await upsertFaq(payload, i, force)
   }
 
   console.log('\n=== Seeding Homepage ===')
-  await seedHomepage(payload)
+  await seedHomepage(payload, force)
 
   console.log('\n=== Seeding Navigation ===')
-  await seedNavigation(payload)
+  await seedNavigation(payload, force)
 
   console.log('\n=== Verifying ===')
   const [courseCount, faqCount, testimonialCount, userCount] = await Promise.all([
@@ -272,7 +363,7 @@ async function main() {
   console.log(`  Courses: ${courseCount.totalDocs} (expected 3)`)
   console.log(`  FAQs: ${faqCount.totalDocs} (expected 5)`)
   console.log(`  Testimonials: ${testimonialCount.totalDocs} (expected 0 — architecture only, never seeded)`)
-  console.log(`  Users: ${userCount.totalDocs} (unaffected by this seed)`)
+  console.log(`  Users: ${userCount.totalDocs} (never touched by this seed)`)
 
   console.log('\nSeed complete.')
   process.exit(0)

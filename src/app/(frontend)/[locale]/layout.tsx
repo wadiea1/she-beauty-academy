@@ -15,17 +15,27 @@ import '@/styles/globals.css'
 // via `params`. The (payload) route group keeps its own independent root
 // layout for /admin — two root layouts via route groups, by design.
 //
-// Rendering strategy (Milestone G): ISR via `revalidate`, not build-time
-// static generation. This is a CMS-driven marketing site — staff expect
-// a Payload publish to go live without a redeploy, which build-time-only
-// SSG can't do. Full per-request dynamic rendering would work too, but
-// pays a database round-trip for every visitor for content that changes
-// at a human editing pace; ISR gets both a cached, fast response and
-// content that reflects a publish within the revalidate window.
-// generateStaticParams is deliberately NOT used here, so nothing is
-// prerendered at build time — `next build` still needs no live database
-// access as a result, but that's a side effect of the right choice for
-// this site, not the reason it was made.
+// Rendering strategy (Milestone G): time-based caching of the CMS data
+// itself, not build-time static generation. This is a CMS-driven
+// marketing site — staff expect a Payload publish to go live without a
+// redeploy, which build-time-only SSG can't do. generateStaticParams is
+// deliberately NOT used here, so nothing is prerendered at build time —
+// `next build` needs no live database access as a result, which is a
+// side effect of the right choice for this site, not the reason it was
+// made.
+//
+// The actual caching lives in src/lib/payload/queries.ts via
+// unstable_cache, NOT in this file's `revalidate` export below. Found
+// this the hard way: this export alone did nothing measurable — a
+// production-server test showed a request immediately after a Payload
+// publish already reflected the new value, zero delay. Per Next.js's
+// docs (Caching and Revalidating, Previous Model — the model this
+// project is on, not the newer opt-in Cache Components), the route
+// segment `revalidate` config governs `fetch()` caching and ISR for
+// routes prerendered via generateStaticParams; neither applies here,
+// since Payload's Local API isn't `fetch()` and this route has no
+// generateStaticParams. Left as a harmless, documented declaration of
+// intent for the route segment; do not rely on it for actual caching.
 export const revalidate = 60
 
 export async function generateMetadata({

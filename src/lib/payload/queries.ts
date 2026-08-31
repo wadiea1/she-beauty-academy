@@ -1,4 +1,5 @@
 import 'server-only'
+import { unstable_cache } from 'next/cache'
 import { getCachedPayload } from './client'
 import type { Locale } from '@/i18n/config'
 import type { Media } from '../../../payload-types'
@@ -16,6 +17,24 @@ import type { Media } from '../../../payload-types'
 //     silently serve Arabic content instead.
 // None of these ever pass `draft: true` — the public site must never be
 // able to request draft/unpublished content, by construction.
+//
+// Caching: each exported function is wrapped in unstable_cache, not left
+// to the route segment's `revalidate` export alone. Verified this the
+// hard way — an earlier version relied on `export const revalidate = 60`
+// in layout.tsx/page.tsx with no generateStaticParams, and a real
+// production-server test showed it cached nothing at all: a request
+// immediately after a Payload publish already reflected the new value,
+// with zero delay. Per Next.js's own docs (Caching and Revalidating,
+// Previous Model), the route-level `revalidate` config governs `fetch()`
+// caching and ISR for routes prerendered via generateStaticParams —
+// neither applies here, since Payload's Local API isn't `fetch()` and
+// this route has no generateStaticParams. `unstable_cache` is the
+// documented mechanism "for non-fetch functions" and is what actually
+// produces cached, revalidate-on-an-interval behavior for a database
+// query — confirmed by re-running the same production-server test after
+// adding it (see docs/IMPLEMENTATION_PLAN.md for the full before/after).
+
+const REVALIDATE_SECONDS = 60
 
 export interface ImageRef {
   src: string | null
@@ -41,17 +60,7 @@ export interface HomepageContent {
   apply: { eyebrow: string; heading: string; body: string }
 }
 
-/**
- * Throws when required narrative content is missing for `locale` (e.g. an
- * unseeded database) rather than silently rendering blank sections or
- * falling back to another language — deliberate per AGENTS.md §5 and the
- * Milestone G brief: a controlled failure during development beats a
- * silent wrong-language homepage. In practice this can only happen before
- * the Homepage global has ever been published for this locale: once
- * published, requireHomepageLocalesToPublish already guarantees every
- * required field is filled for all three locales.
- */
-export async function getHomepage(locale: Locale): Promise<HomepageContent> {
+async function fetchHomepage(locale: Locale): Promise<HomepageContent> {
   const payload = await getCachedPayload()
   const doc = await payload.findGlobal({
     slug: 'homepage',
@@ -108,6 +117,23 @@ export async function getHomepage(locale: Locale): Promise<HomepageContent> {
   }
 }
 
+/**
+ * Throws when required narrative content is missing for `locale` (e.g. an
+ * unseeded database) rather than silently rendering blank sections or
+ * falling back to another language — deliberate per AGENTS.md §5 and the
+ * Milestone G brief: a controlled failure during development beats a
+ * silent wrong-language homepage. In practice this can only happen before
+ * the Homepage global has ever been published for this locale: once
+ * published, requireHomepageLocalesToPublish already guarantees every
+ * required field is filled for all three locales. (unstable_cache does
+ * not cache a thrown rejection, so an unseeded state never gets "stuck"
+ * cached as broken.)
+ */
+export const getHomepage = unstable_cache(fetchHomepage, ['payload-homepage'], {
+  revalidate: REVALIDATE_SECONDS,
+  tags: ['homepage'],
+})
+
 export interface CourseContent {
   slug: string
   title: string
@@ -115,10 +141,7 @@ export interface CourseContent {
   ctaLabel: string | null
 }
 
-/** Empty is a valid state for a list (unseeded DB, or genuinely zero
- * published courses) — renders the section with no cards rather than
- * failing the whole page, unlike getHomepage's required narrative copy. */
-export async function getPublishedCourses(locale: Locale): Promise<CourseContent[]> {
+async function fetchPublishedCourses(locale: Locale): Promise<CourseContent[]> {
   const payload = await getCachedPayload()
   const result = await payload.find({
     collection: 'courses',
@@ -137,15 +160,20 @@ export async function getPublishedCourses(locale: Locale): Promise<CourseContent
   }))
 }
 
+/** Empty is a valid state for a list (unseeded DB, or genuinely zero
+ * published courses) — renders the section with no cards rather than
+ * failing the whole page, unlike getHomepage's required narrative copy. */
+export const getPublishedCourses = unstable_cache(fetchPublishedCourses, ['payload-courses'], {
+  revalidate: REVALIDATE_SECONDS,
+  tags: ['courses'],
+})
+
 export interface FaqContent {
   question: string
   answer: string
 }
 
-/** General FAQs only (no relatedCourse) — matches the field's documented
- * intent ("leave blank for a general FAQ shown on the homepage"); course
- * detail pages (Milestone H) would additionally query by relatedCourse. */
-export async function getPublishedFAQs(locale: Locale): Promise<FaqContent[]> {
+async function fetchPublishedFAQs(locale: Locale): Promise<FaqContent[]> {
   const payload = await getCachedPayload()
   const result = await payload.find({
     collection: 'faqs',
@@ -160,16 +188,21 @@ export async function getPublishedFAQs(locale: Locale): Promise<FaqContent[]> {
   return result.docs.map((doc) => ({ question: doc.question, answer: doc.answer }))
 }
 
+/** General FAQs only (no relatedCourse) — matches the field's documented
+ * intent ("leave blank for a general FAQ shown on the homepage"); course
+ * detail pages (Milestone H) would additionally query by relatedCourse. */
+export const getPublishedFAQs = unstable_cache(fetchPublishedFAQs, ['payload-faqs'], {
+  revalidate: REVALIDATE_SECONDS,
+  tags: ['faqs'],
+})
+
 export interface NavItem {
   label: string
   path: string
   openInNewTab: boolean
 }
 
-/** `path` is locale-agnostic by design (e.g. "#courses", not
- * "/ar#courses") — the frontend prepends `/${locale}` itself, so the
- * same stored nav works under any locale prefix. */
-export async function getNavigation(locale: Locale): Promise<NavItem[]> {
+async function fetchNavigation(locale: Locale): Promise<NavItem[]> {
   const payload = await getCachedPayload()
   const doc = await payload.findGlobal({
     slug: 'navigation',
@@ -185,6 +218,14 @@ export async function getNavigation(locale: Locale): Promise<NavItem[]> {
   }))
 }
 
+/** `path` is locale-agnostic by design (e.g. "#courses", not
+ * "/ar#courses") — the frontend prepends `/${locale}` itself, so the
+ * same stored nav works under any locale prefix. */
+export const getNavigation = unstable_cache(fetchNavigation, ['payload-navigation'], {
+  revalidate: REVALIDATE_SECONDS,
+  tags: ['navigation'],
+})
+
 export interface SiteSettingsContent {
   whatsappNumber: string | null
   instagramHandle: string | null
@@ -193,10 +234,7 @@ export interface SiteSettingsContent {
   address: string | null
 }
 
-/** Every field is optional and none are gated — degrades gracefully by
- * design: consumers omit the corresponding CTA when a value is null,
- * exactly as src/config/site.ts (which this replaces) always did. */
-export async function getSiteSettings(locale: Locale): Promise<SiteSettingsContent> {
+async function fetchSiteSettings(locale: Locale): Promise<SiteSettingsContent> {
   const payload = await getCachedPayload()
   const doc = await payload.findGlobal({
     slug: 'site-settings',
@@ -213,3 +251,11 @@ export async function getSiteSettings(locale: Locale): Promise<SiteSettingsConte
     address: doc.address ?? null,
   }
 }
+
+/** Every field is optional and none are gated — degrades gracefully by
+ * design: consumers omit the corresponding CTA when a value is null,
+ * exactly as the old src/config/site.ts always did. */
+export const getSiteSettings = unstable_cache(fetchSiteSettings, ['payload-site-settings'], {
+  revalidate: REVALIDATE_SECONDS,
+  tags: ['site-settings'],
+})
