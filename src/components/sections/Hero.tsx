@@ -5,10 +5,14 @@ import { Text } from '@/components/ui/Text'
 import { Eyebrow } from '@/components/ui/Eyebrow'
 import { Button } from '@/components/ui/Button'
 import { ImageFrame } from '@/components/ui/ImageFrame'
-import type { HomepageCopy } from '@/content/homepage'
+import type { HomepageContent } from '@/lib/payload/queries'
 
 interface HeroProps {
-  copy: HomepageCopy['hero']
+  copy: HomepageContent['hero']
+  /** "Book a Consultation" — interface vocabulary (src/i18n dictionaries),
+   * not CMS content: the same label is reused verbatim as the site's one
+   * recurring CTA action, not per-section editorial copy. */
+  ctaLabel: string
 }
 
 /**
@@ -17,7 +21,7 @@ interface HeroProps {
  * frame rather than a dominant image — so the hero still reads strongly
  * before real photography exists.
  */
-export function Hero({ copy }: HeroProps) {
+export function Hero({ copy, ctaLabel }: HeroProps) {
   return (
     <Section tone="porcelain" spacing="lg">
       <Container width="editorial">
@@ -31,12 +35,18 @@ export function Hero({ copy }: HeroProps) {
               {copy.lead}
             </Text>
             <Button href="#apply" size="lg" className="mt-8">
-              {copy.cta}
+              {ctaLabel}
             </Button>
           </div>
 
           <div className="lg:col-span-5">
-            <ImageFrame ratio="portrait" alt={copy.eyebrow} priority className="max-w-sm lg:ms-auto" />
+            <ImageFrame
+              ratio="portrait"
+              src={copy.image.src}
+              alt={copy.image.alt}
+              priority
+              className="max-w-sm lg:ms-auto"
+            />
           </div>
         </div>
       </Container>

@@ -31,7 +31,7 @@ export const Navigation: GlobalConfig = {
       type: 'array',
       admin: {
         description:
-          'Reorder by dragging. Path can be an in-page anchor ("#courses"), a site path ("/courses"), or a full external URL.',
+          'Reorder by dragging. Use "/" for the homepage link itself; otherwise an in-page anchor ("#courses"), a site path ("/courses"), or a full external URL.',
       },
       fields: [
         { name: 'label', type: 'text', required: true, localized: true },

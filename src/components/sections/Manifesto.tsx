@@ -3,10 +3,10 @@ import { Section } from '@/components/ui/Section'
 import { Heading } from '@/components/ui/Heading'
 import { Text } from '@/components/ui/Text'
 import { Eyebrow } from '@/components/ui/Eyebrow'
-import type { HomepageCopy } from '@/content/homepage'
+import type { HomepageContent } from '@/lib/payload/queries'
 
 interface ManifestoProps {
-  copy: HomepageCopy['manifesto']
+  copy: HomepageContent['manifesto']
 }
 
 export function Manifesto({ copy }: ManifestoProps) {

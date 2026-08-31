@@ -3,19 +3,21 @@ import { Section } from '@/components/ui/Section'
 import { Heading } from '@/components/ui/Heading'
 import { Eyebrow } from '@/components/ui/Eyebrow'
 import { ImageFrame } from '@/components/ui/ImageFrame'
-import { instagramHref, siteConfig } from '@/config/site'
+import { instagramHref } from '@/lib/links'
 
 interface SocialProofProps {
   eyebrow: string
   heading: string
+  instagramHandle: string | null
+  brandName: string
 }
 
-/** Renders nothing until `siteConfig.instagramHandle` is set (see
- * src/config/site.ts) — no "coming soon" placeholder ships to real
+/** Renders nothing until Payload's Site Settings global has a real
+ * Instagram handle — no "coming soon" placeholder ships to real
  * visitors; this stays inert plumbing until there's a real account to
  * link. */
-export function SocialProof({ eyebrow, heading }: SocialProofProps) {
-  const href = instagramHref()
+export function SocialProof({ eyebrow, heading, instagramHandle, brandName }: SocialProofProps) {
+  const href = instagramHref(instagramHandle)
   if (!href) return null
 
   return (
@@ -29,7 +31,7 @@ export function SocialProof({ eyebrow, heading }: SocialProofProps) {
         </a>
         <div className="mt-10 grid grid-cols-2 gap-4 sm:grid-cols-4">
           {Array.from({ length: 4 }, (_, i) => (
-            <ImageFrame key={i} ratio="square" alt={`${siteConfig.name} on Instagram`} />
+            <ImageFrame key={i} ratio="square" alt={`${brandName} on Instagram`} />
           ))}
         </div>
       </Container>

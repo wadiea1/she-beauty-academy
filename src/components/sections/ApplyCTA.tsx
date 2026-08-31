@@ -4,18 +4,20 @@ import { Heading } from '@/components/ui/Heading'
 import { Text } from '@/components/ui/Text'
 import { Eyebrow } from '@/components/ui/Eyebrow'
 import { Button } from '@/components/ui/Button'
-import { whatsappHref } from '@/config/site'
-import type { HomepageCopy } from '@/content/homepage'
+import { whatsappHref } from '@/lib/links'
+import type { HomepageContent } from '@/lib/payload/queries'
 import type { Locale } from '@/i18n/config'
 
 interface ApplyCTAProps {
-  copy: HomepageCopy['apply']
+  copy: HomepageContent['apply']
+  ctaLabel: string
   whatsappLabel: string
+  whatsappNumber: string | null
   locale: Locale
 }
 
-export function ApplyCTA({ copy, whatsappLabel, locale }: ApplyCTAProps) {
-  const whatsapp = whatsappHref()
+export function ApplyCTA({ copy, ctaLabel, whatsappLabel, whatsappNumber, locale }: ApplyCTAProps) {
+  const whatsapp = whatsappHref(whatsappNumber)
 
   return (
     <Section id="apply" tone="ink" spacing="lg">
@@ -31,7 +33,7 @@ export function ApplyCTA({ copy, whatsappLabel, locale }: ApplyCTAProps) {
         </Text>
         <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
           <Button href={`/${locale}#apply`} variant="inverse" size="lg">
-            {copy.cta}
+            {ctaLabel}
           </Button>
           {whatsapp && (
             <Button

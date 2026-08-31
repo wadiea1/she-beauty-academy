@@ -30,6 +30,7 @@ const REQUIRED_PATHS = [
   'instructor.eyebrow',
   'instructor.heading',
   'instructor.role',
+  'instructor.photoAlt',
   'faqIntro.eyebrow',
   'faqIntro.heading',
   'apply.eyebrow',

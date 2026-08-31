@@ -4,10 +4,10 @@ import { Heading } from '@/components/ui/Heading'
 import { Text } from '@/components/ui/Text'
 import { Eyebrow } from '@/components/ui/Eyebrow'
 import { ImageFrame } from '@/components/ui/ImageFrame'
-import type { HomepageCopy } from '@/content/homepage'
+import type { HomepageContent } from '@/lib/payload/queries'
 
 interface InsideAcademyProps {
-  copy: HomepageCopy['insideAcademy']
+  copy: HomepageContent['insideAcademy']
 }
 
 export function InsideAcademy({ copy }: InsideAcademyProps) {
@@ -25,8 +25,13 @@ export function InsideAcademy({ copy }: InsideAcademyProps) {
         </div>
 
         <div className="mt-12 grid grid-cols-2 gap-4 sm:gap-6">
-          {copy.imageAlts.map((alt, i) => (
-            <ImageFrame key={alt} alt={alt} ratio={i % 2 === 0 ? 'square' : 'portrait'} />
+          {copy.images.map((image, i) => (
+            <ImageFrame
+              key={image.alt}
+              src={image.src}
+              alt={image.alt}
+              ratio={i % 2 === 0 ? 'square' : 'portrait'}
+            />
           ))}
         </div>
       </Container>

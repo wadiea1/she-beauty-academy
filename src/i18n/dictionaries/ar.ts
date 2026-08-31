@@ -7,10 +7,6 @@ const ar = {
     tagline: 'كوني SHE.',
   },
   nav: {
-    home: 'الرئيسية',
-    courses: 'الدورات',
-    academy: 'عن الأكاديمية',
-    faq: 'الأسئلة الشائعة',
     apply: 'احجزي استشارة',
     openMenu: 'فتح القائمة',
     closeMenu: 'إغلاق القائمة',
