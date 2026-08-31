@@ -2,7 +2,7 @@ import 'server-only'
 import { unstable_cache } from 'next/cache'
 import { getCachedPayload } from './client'
 import type { Locale } from '@/i18n/config'
-import type { Media } from '../../../payload-types'
+import type { Course, Media } from '../../../payload-types'
 
 // Every query below is deliberately explicit about two options that
 // Payload's Local API defaults the *other* way:
@@ -168,6 +168,99 @@ export const getPublishedCourses = unstable_cache(fetchPublishedCourses, ['paylo
   tags: ['courses'],
 })
 
+export interface CourseDetail {
+  /** Payload's internal numeric id — not rendered, needed only to scope
+   * the course-specific FAQ query below. */
+  id: number
+  slug: string
+  title: string
+  shortDescription: string
+  description: string | null
+  heroImage: ImageRef
+  gallery: ImageRef[]
+  audience: string | null
+  ctaLabel: string | null
+  curriculum: { title: string; description: string | null }[]
+  outcomes: string[]
+  pricing: {
+    type: Course['pricingType']
+    price: number | null
+    priceRangeMin: number | null
+    priceRangeMax: number | null
+    currency: Course['currency']
+  }
+  duration: string | null
+  scheduleInfo: string | null
+  enrollmentState: Course['enrollmentState']
+  metaTitle: string | null
+  metaDescription: string | null
+}
+
+async function fetchCourseBySlug(locale: Locale, slug: string): Promise<CourseDetail | null> {
+  const payload = await getCachedPayload()
+  const result = await payload.find({
+    collection: 'courses',
+    locale,
+    fallbackLocale: false,
+    overrideAccess: false,
+    // No explicit `status: 'published'` filter needed — access.read
+    // (publishedOnlyAccess-equivalent for anonymous requests, see
+    // Courses.ts) already restricts the query to published docs and is
+    // ANDed with this `where`, exactly like getPublishedCourses above.
+    // An unpublished course therefore returns zero docs here, not the
+    // draft — the caller treats that identically to "slug doesn't
+    // exist" and calls notFound(), so there's no separate code path
+    // that could leak draft content.
+    where: { slug: { equals: slug } },
+    limit: 1,
+    depth: 1,
+  })
+
+  const doc = result.docs[0]
+  if (!doc) return null
+
+  return {
+    id: doc.id,
+    slug: doc.slug,
+    title: doc.title,
+    shortDescription: doc.shortDescription,
+    description: doc.description ?? null,
+    heroImage: mediaToImageRef(doc.heroImage, doc.title),
+    gallery: (doc.gallery ?? []).map((row) => mediaToImageRef(row.image, doc.title)),
+    audience: doc.audience ?? null,
+    ctaLabel: doc.ctaLabel ?? null,
+    curriculum: (doc.curriculum ?? []).map((m) => ({ title: m.title, description: m.description ?? null })),
+    outcomes: (doc.outcomes ?? []).map((o) => o.text),
+    pricing: {
+      type: doc.pricingType,
+      price: doc.price ?? null,
+      priceRangeMin: doc.priceRangeMin ?? null,
+      priceRangeMax: doc.priceRangeMax ?? null,
+      currency: doc.currency ?? null,
+    },
+    duration: doc.duration ?? null,
+    scheduleInfo: doc.scheduleInfo ?? null,
+    enrollmentState: doc.enrollmentState,
+    metaTitle: doc.metaTitle ?? null,
+    metaDescription: doc.metaDescription ?? null,
+  }
+}
+
+/** `null` is a valid result (no such slug, or the matching course isn't
+ * published) — the route calls notFound() either way, deliberately not
+ * distinguishing the two so an unpublished course's existence can't be
+ * inferred from a different error. Cache key correctness: verified
+ * directly against the installed Next version's source
+ * (node_modules/next/dist/server/web/spec-extension/unstable-cache.js)
+ * that the wrapped function's runtime arguments are part of the cache
+ * key (`` `${fixedKey}-${JSON.stringify(args)}` ``), so `(locale, slug)`
+ * pairs never collide — re-verified live, not just read, before this
+ * shipped (see docs/IMPLEMENTATION_PLAN.md, Milestone H). */
+export const getPublishedCourseBySlug = unstable_cache(fetchCourseBySlug, ['payload-course-by-slug'], {
+  revalidate: REVALIDATE_SECONDS,
+  tags: ['courses'],
+})
+
 export interface FaqContent {
   question: string
   answer: string
@@ -190,8 +283,34 @@ async function fetchPublishedFAQs(locale: Locale): Promise<FaqContent[]> {
 
 /** General FAQs only (no relatedCourse) — matches the field's documented
  * intent ("leave blank for a general FAQ shown on the homepage"); course
- * detail pages (Milestone H) would additionally query by relatedCourse. */
+ * detail pages additionally query by relatedCourse via
+ * getPublishedFAQsForCourse below. */
 export const getPublishedFAQs = unstable_cache(fetchPublishedFAQs, ['payload-faqs'], {
+  revalidate: REVALIDATE_SECONDS,
+  tags: ['faqs'],
+})
+
+async function fetchFAQsForCourse(locale: Locale, courseId: number): Promise<FaqContent[]> {
+  const payload = await getCachedPayload()
+  const result = await payload.find({
+    collection: 'faqs',
+    locale,
+    fallbackLocale: false,
+    overrideAccess: false,
+    where: { relatedCourse: { equals: courseId } },
+    sort: 'order',
+    limit: 50,
+    depth: 0,
+  })
+  return result.docs.map((doc) => ({ question: doc.question, answer: doc.answer }))
+}
+
+/** Course-specific FAQs only — deliberately not merged with the general
+ * (no-relatedCourse) FAQs already shown on the homepage, so a course
+ * page never duplicates content the visitor may have already seen
+ * there. Empty is valid: most courses have none yet, and the section is
+ * simply omitted rather than showing an empty heading. */
+export const getPublishedFAQsForCourse = unstable_cache(fetchFAQsForCourse, ['payload-faqs-for-course'], {
   revalidate: REVALIDATE_SECONDS,
   tags: ['faqs'],
 })
@@ -232,6 +351,11 @@ export interface SiteSettingsContent {
   email: string | null
   phone: string | null
   address: string | null
+  /** Fallback metadata for pages that don't set their own — e.g. a
+   * course with no metaTitle/metaDescription of its own yet. `ogImage`
+   * is deliberately not exposed here: none is set today, and none
+   * should be invented (no stock/placeholder Open Graph photography). */
+  defaultSeo: { metaTitle: string | null; metaDescription: string | null }
 }
 
 async function fetchSiteSettings(locale: Locale): Promise<SiteSettingsContent> {
@@ -249,6 +373,10 @@ async function fetchSiteSettings(locale: Locale): Promise<SiteSettingsContent> {
     email: doc.email ?? null,
     phone: doc.phone ?? null,
     address: doc.address ?? null,
+    defaultSeo: {
+      metaTitle: doc.defaultSeo?.metaTitle ?? null,
+      metaDescription: doc.defaultSeo?.metaDescription ?? null,
+    },
   }
 }
 
