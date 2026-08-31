@@ -1,7 +1,7 @@
 import { cn } from '@/lib/cn'
 import type { HTMLAttributes } from 'react'
 
-type As = 'section' | 'article' | 'div' | 'aside'
+type As = 'section' | 'article' | 'div' | 'aside' | 'footer'
 type Tone = 'porcelain' | 'shell' | 'ink' | 'transparent'
 type Spacing = 'sm' | 'md' | 'lg'
 
