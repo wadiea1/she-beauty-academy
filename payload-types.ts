@@ -68,6 +68,8 @@ export interface Config {
   blocks: {};
   collections: {
     users: User;
+    media: Media;
+    courses: Course;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -76,6 +78,8 @@ export interface Config {
   collectionsJoins: {};
   collectionsSelect: {
     users: UsersSelect<false> | UsersSelect<true>;
+    media: MediaSelect<false> | MediaSelect<true>;
+    courses: CoursesSelect<false> | CoursesSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -141,6 +145,125 @@ export interface User {
   collection: 'users';
 }
 /**
+ * Photos and other files used across the site.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "media".
+ */
+export interface Media {
+  id: number;
+  /**
+   * Describes the image for screen readers and SEO — required in every language.
+   */
+  alt: string;
+  /**
+   * Optional visible caption, if the image needs one.
+   */
+  caption?: string | null;
+  updatedAt: string;
+  createdAt: string;
+  url?: string | null;
+  thumbnailURL?: string | null;
+  filename?: string | null;
+  mimeType?: string | null;
+  filesize?: number | null;
+  width?: number | null;
+  height?: number | null;
+  focalX?: number | null;
+  focalY?: number | null;
+}
+/**
+ * The academy's current courses.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "courses".
+ */
+export interface Course {
+  id: number;
+  /**
+   * Published courses appear on the public site. All three languages are required to publish.
+   */
+  status: 'draft' | 'published';
+  /**
+   * Lower numbers show first.
+   */
+  order?: number | null;
+  /**
+   * URL-friendly identifier, e.g. "cosmetics-1". Shared across all locales — not translated.
+   */
+  slug: string;
+  title: string;
+  /**
+   * Used on course cards and listings.
+   */
+  shortDescription: string;
+  /**
+   * Full description for the course detail page.
+   */
+  description?: string | null;
+  heroImage?: (number | null) | Media;
+  /**
+   * Additional photos for the course detail page.
+   */
+  gallery?:
+    | {
+        image: number | Media;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Who this course is for.
+   */
+  audience?: string | null;
+  /**
+   * Optional override for the course card button. Leave blank for the site default.
+   */
+  ctaLabel?: string | null;
+  /**
+   * Modules or stages of the course.
+   */
+  curriculum?:
+    | {
+        title: string;
+        description?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * What a student leaves with.
+   */
+  outcomes?:
+    | {
+        text: string;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Pricing is not finalized — "On request" is the safe default.
+   */
+  pricingType: 'exact' | 'startingFrom' | 'range' | 'onRequest' | 'hidden';
+  /**
+   * The exact price, or the "starting from" amount.
+   */
+  price?: number | null;
+  priceRangeMin?: number | null;
+  priceRangeMax?: number | null;
+  currency?: ('ILS' | 'USD') | null;
+  /**
+   * Freeform, e.g. "6 weeks". Leave blank if not finalized.
+   */
+  duration?: string | null;
+  /**
+   * Freeform schedule details, once finalized.
+   */
+  scheduleInfo?: string | null;
+  enrollmentState: 'open' | 'closed' | 'comingSoon' | 'full';
+  metaTitle?: string | null;
+  metaDescription?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
@@ -163,10 +286,19 @@ export interface PayloadKv {
  */
 export interface PayloadLockedDocument {
   id: number;
-  document?: {
-    relationTo: 'users';
-    value: number | User;
-  } | null;
+  document?:
+    | ({
+        relationTo: 'users';
+        value: number | User;
+      } | null)
+    | ({
+        relationTo: 'media';
+        value: number | Media;
+      } | null)
+    | ({
+        relationTo: 'courses';
+        value: number | Course;
+      } | null);
   globalSlug?: string | null;
   user: {
     relationTo: 'users';
@@ -230,6 +362,71 @@ export interface UsersSelect<T extends boolean = true> {
         createdAt?: T;
         expiresAt?: T;
       };
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "media_select".
+ */
+export interface MediaSelect<T extends boolean = true> {
+  alt?: T;
+  caption?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  url?: T;
+  thumbnailURL?: T;
+  filename?: T;
+  mimeType?: T;
+  filesize?: T;
+  width?: T;
+  height?: T;
+  focalX?: T;
+  focalY?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "courses_select".
+ */
+export interface CoursesSelect<T extends boolean = true> {
+  status?: T;
+  order?: T;
+  slug?: T;
+  title?: T;
+  shortDescription?: T;
+  description?: T;
+  heroImage?: T;
+  gallery?:
+    | T
+    | {
+        image?: T;
+        id?: T;
+      };
+  audience?: T;
+  ctaLabel?: T;
+  curriculum?:
+    | T
+    | {
+        title?: T;
+        description?: T;
+        id?: T;
+      };
+  outcomes?:
+    | T
+    | {
+        text?: T;
+        id?: T;
+      };
+  pricingType?: T;
+  price?: T;
+  priceRangeMin?: T;
+  priceRangeMax?: T;
+  currency?: T;
+  duration?: T;
+  scheduleInfo?: T;
+  enrollmentState?: T;
+  metaTitle?: T;
+  metaDescription?: T;
+  updatedAt?: T;
+  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

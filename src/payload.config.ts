@@ -2,13 +2,15 @@ import { postgresAdapter } from '@payloadcms/db-postgres'
 import { buildConfig } from 'payload'
 
 import { Users } from './collections/Users'
+import { Media } from './collections/Media'
+import { Courses } from './collections/Courses'
 
 export default buildConfig({
   admin: {
     user: Users.slug,
   },
 
-  collections: [Users],
+  collections: [Users, Media, Courses],
 
   localization: {
     locales: [
