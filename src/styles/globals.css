@@ -24,7 +24,7 @@
   --radius-hairline: 2px;
   --radius-panel: 4px;
 
-/* Type — resolved per locale in Phase 4 */
+/* Type — resolved per locale below via :lang() */
   --font-body: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-display: ui-serif, Georgia, "Times New Roman", serif;
 
@@ -40,6 +40,28 @@
   --text-5xl: clamp(3.25rem, 5vw, 4.5rem);
   --text-6xl: clamp(3.5rem, 7vw, 6rem);
 
+}
+
+/*
+ * Locale → typeface mapping (Phase 4).
+ * `<html lang="ar|he|en">` is set once per request in the locale root
+ * layout; these rules pick the right next/font variable without any
+ * per-locale branching in component code. See src/styles/fonts.ts and
+ * src/styles/README.md.
+ */
+:root:lang(ar) {
+  --font-body: var(--font-body-arabic);
+  --font-display: var(--font-display-arabic);
+}
+
+:root:lang(he) {
+  --font-body: var(--font-body-hebrew);
+  --font-display: var(--font-display-hebrew);
+}
+
+:root:lang(en) {
+  --font-body: var(--font-body-latin);
+  --font-display: var(--font-display-latin);
 }
 
 body {
