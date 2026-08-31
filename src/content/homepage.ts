@@ -1,0 +1,374 @@
+import type { Locale } from '@/i18n/config'
+
+export interface CourseCopy {
+  slug: string
+  title: string
+  description: string
+}
+
+export interface FaqItem {
+  question: string
+  answer: string
+}
+
+export interface HomepageCopy {
+  hero: { eyebrow: string; heading: string; lead: string; cta: string }
+  manifesto: { eyebrow: string; heading: string; body: string }
+  whySHE: { eyebrow: string; heading: string; pillars: { title: string; body: string }[] }
+  courses: { eyebrow: string; heading: string; intro: string; items: [CourseCopy, CourseCopy, CourseCopy] }
+  insideAcademy: { eyebrow: string; heading: string; body: string; imageAlts: [string, string, string, string] }
+  whatYouLeaveWith: { eyebrow: string; heading: string; points: string[] }
+  instructor: { eyebrow: string; heading: string; role: string; bio: [string, string]; imageAlt: string }
+  faq: { eyebrow: string; heading: string; items: FaqItem[] }
+  apply: { eyebrow: string; heading: string; body: string; cta: string }
+}
+
+const ar = {
+  hero: {
+    eyebrow: 'أكاديمية تعليم تجميل متميزة',
+    heading: 'كوني SHE.',
+    lead: 'مساحة مدروسة للنساء اللواتي يأخذن حرفتهن على محمل الجد — تعليم تجميل احترافي بمعايير عالمية.',
+    cta: 'احجزي استشارة',
+  },
+  manifesto: {
+    eyebrow: 'فلسفتنا',
+    heading: 'حرفة تُؤخذ على محمل الجد.',
+    body: 'تأسست SHE لسبب بسيط: تعليم التجميل في منطقتنا يستحق نفس الدقة التي يحظى بها أي تخصص مهني جاد. نُعلّم المهارة كما يُعلّم مطبخ جاد استخدام السكين — بدقة، وصبر، ودون اختصارات. ما تبنينه هنا ليس شهادة تُعلَّق على الحائط، بل يد تعرف تمامًا ما تفعله.',
+  },
+  whySHE: {
+    eyebrow: 'لماذا SHE',
+    heading: 'الفرق في التفاصيل.',
+    pillars: [
+      {
+        title: 'خبرة حقيقية تُدرِّس',
+        body: 'كل تقنية تتعلمينها اختُبرت على عميلات حقيقيات، على مدى أكثر من عقد من العمل الفعلي — لا مأخوذة من كتاب.',
+      },
+      {
+        title: 'تطبيق منذ اليوم الأول',
+        body: 'وقت أقل في الجلوس، وأكثر في التنفيذ. ستمضين وقتك عند محطة العمل، لا في قاعة محاضرات.',
+      },
+      {
+        title: 'مبنية للعمل، لا للمهارة فقط',
+        body: 'المهارة تُوظِّفك. فهم علامتك التجارية وعميلاتك يجعلك مطلوبة باستمرار. نُعلّم الاثنين معًا.',
+      },
+    ],
+  },
+  courses: {
+    eyebrow: 'الدورات',
+    heading: 'الدورات الحالية',
+    intro: 'ثلاث دورات، بمسار واضح — من الأساس إلى بناء عمل قائم على حرفتك.',
+    items: [
+      {
+        slug: 'cosmetics-1',
+        title: 'كوزماتيكس 1',
+        description: 'نقطة البداية — الأساسيات التقنية، ومعرفة المنتجات، والعادات التي تفرق بين العمل المتقن والعمل المتسرّع.',
+      },
+      {
+        slug: 'cosmetics-2',
+        title: 'كوزماتيكس 2',
+        description: 'بناءً على كوزماتيكس 1 — تقنيات متقدمة، والقدرة على التعامل بثقة مع مواقف العميلات الحقيقية.',
+      },
+      {
+        slug: 'branding-ai-beauty',
+        title: 'العلامة التجارية والذكاء الاصطناعي لأصحاب أعمال التجميل',
+        description: 'لخريجات جاهزات لبناء عمل حول حرفتهن — التموضع، الحضور، وأدوات الذكاء الاصطناعي العملية لعلامة تجميل حديثة.',
+      },
+    ],
+  },
+  insideAcademy: {
+    eyebrow: 'داخل الأكاديمية',
+    heading: 'استوديو للعمل، لا للعرض فقط.',
+    body: 'كل محطة، وكل أداة، وكل زاوية في الأكاديمية مصمَّمة لتحاكي ظروف العمل الحقيقية — لأن التدريب الذي يُشبه الواقع هو التدريب الذي يبقى معك.',
+    imageAlts: [
+      'المدرِّبة تشرح تقنية عن قرب',
+      'لقطة مقرَّبة للأدوات والمنتجات',
+      'طالبات يتدربن عند محطة العمل',
+      'لقطة عامة لاستوديو الأكاديمية',
+    ],
+  },
+  whatYouLeaveWith: {
+    eyebrow: 'ما تخرجين به',
+    heading: 'ما تأخذينه معك.',
+    points: [
+      'تقنية تثقين بها، صُقلت من خلال تدريب عملي حقيقي — لا مشاهدة فقط.',
+      'دبلوم مهني عند إتمام الدورة بنجاح.',
+      'بداية ملف أعمال — عمل حقيقي أنجزتِه، لا مجرد تمرين صفّي.',
+    ],
+  },
+  instructor: {
+    eyebrow: 'عن مؤسِّسة الأكاديمية',
+    heading: 'خبرة بُنيت على مدى سنوات، وُضعت الآن في خدمتك.',
+    role: 'المؤسِّسة والمدرِّبة الرئيسية',
+    bio: [
+      'قبل SHE، أمضت مؤسِّسة الأكاديمية أكثر من عقد في بناء مسيرتها المهنية في مجال التجميل — كممارِسة، ومُدرِّبة، وصولًا إلى إدارة ممارستها التعليمية الخاصة.',
+      'خلال هذه السنوات، دربت شخصيًا أكثر من 500 متدربة. SHE هي المكان الذي تتحول فيه هذه الخبرة إلى أكاديمية رسمية — مبنية بالطريقة التي كانت تتمنى أن يكون عليها تدريبها الخاص.',
+    ],
+    imageAlt: 'صورة شخصية لمؤسِّسة الأكاديمية',
+  },
+  faq: {
+    eyebrow: 'الأسئلة الشائعة',
+    heading: 'أسئلة نجيب عنها كثيرًا.',
+    items: [
+      {
+        question: 'هل أحتاج إلى خبرة سابقة للانضمام؟',
+        answer: 'كوزماتيكس 1 مصمَّمة لتكون نقطة بدايتك — لا حاجة لخبرة سابقة. كوزماتيكس 2 تُبنى مباشرة عليها.',
+      },
+      {
+        question: 'كم تكلفة الدورة؟',
+        answer: 'تختلف التكلفة حسب الدورة والدفعة الحالية — سنشرح لكِ كل التفاصيل خلال مكالمة الاستشارة.',
+      },
+      {
+        question: 'هل أحصل على شهادة؟',
+        answer: 'نعم — دبلوم مهني عند إتمام الدورة بنجاح.',
+      },
+      {
+        question: 'أين تُقام الدورات؟',
+        answer: 'حضوريًا، في مقر الأكاديمية. سنشارككِ العنوان الكامل عند تحديد موعد استشارتك.',
+      },
+      {
+        question: 'ماذا يحدث بعد أن أقدّم طلبي؟',
+        answer: 'سنتواصل معكِ لفهم ما تبحثين عنه، والإجابة عن أسئلتك، وتحديد موعد لزيارة الأكاديمية أو التحدث هاتفيًا — دون أي ضغط أو التزام.',
+      },
+    ],
+  },
+  apply: {
+    eyebrow: 'الخطوة التالية',
+    heading: 'كوني SHE.',
+    body: 'ابدئي بمحادثة بسيطة. سنجاوب عن أسئلتك ونحدد موعدًا لاستشارة أو زيارة للأكاديمية.',
+    cta: 'احجزي استشارة',
+  },
+} satisfies HomepageCopy
+
+const he = {
+  hero: {
+    eyebrow: 'אקדמיה מקצועית ליופי',
+    heading: 'היי SHE.',
+    lead: 'מרחב מוקפד לנשים שמתייחסות למקצוע שלהן ברצינות — לימודי קוסמטיקה מקצועיים בסטנדרט בינלאומי.',
+    cta: 'קביעת ייעוץ',
+  },
+  manifesto: {
+    eyebrow: 'הפילוסופיה שלנו',
+    heading: 'מלאכה שמתייחסים אליה ברצינות.',
+    body: 'SHE נוסדה מסיבה פשוטה: לימודי קוסמטיקה באזור שלנו ראויים לאותה רצינות שיש לכל מקצוע מכובד. אנחנו מלמדות טכניקה כמו שמטבח רציני מלמד שימוש בסכין — בדייקנות, בסבלנות וללא קיצורי דרך. מה שבונים כאן זו לא תעודה לתלייה על הקיר, אלא יד שיודעת בדיוק מה היא עושה.',
+  },
+  whySHE: {
+    eyebrow: 'למה SHE',
+    heading: 'ההבדל נמצא בפרטים.',
+    pillars: [
+      {
+        title: 'ניסיון אמיתי מלמד',
+        body: 'כל טכניקה שתלמדו נבחנה על לקוחות אמיתיות, לאורך למעלה מעשור של עבודה בפועל — לא נלקחה מספר לימוד.',
+      },
+      {
+        title: 'תרגול מהיום הראשון',
+        body: 'פחות ישיבה, יותר עשייה. תבלו את הזמן בעמדת העבודה, לא באולם הרצאות.',
+      },
+      {
+        title: 'בנוי לעסק, לא רק למקצוע',
+        body: 'המקצועיות מביאה אתכן להתקבל לעבודה. הבנת המותג והלקוחה שלכן היא מה שמביא אתכן להיות מבוקשות. אנחנו מלמדות את שניהם.',
+      },
+    ],
+  },
+  courses: {
+    eyebrow: 'קורסים',
+    heading: 'הקורסים הנוכחיים',
+    intro: 'שלושה קורסים, במסלול ברור — מהבסיס ועד בניית עסק סביב המקצוע שלכן.',
+    items: [
+      {
+        slug: 'cosmetics-1',
+        title: 'קוסמטיקה 1',
+        description: 'נקודת ההתחלה — הבסיס הטכני, היכרות עם מוצרים, וההרגלים שמפרידים בין עבודה מוקפדת לעבודה נחפזת.',
+      },
+      {
+        slug: 'cosmetics-2',
+        title: 'קוסמטיקה 2',
+        description: 'בהמשך לקוסמטיקה 1 — טכניקות מתקדמות והיכולת להתמודד בביטחון עם מצבים אמיתיים מול לקוחות.',
+      },
+      {
+        slug: 'branding-ai-beauty',
+        title: 'מיתוג ובינה מלאכותית לעסקי יופי',
+        description: 'לבוגרות שמוכנות לבנות עסק סביב המקצוע שלהן — מיצוב, נוכחות, וכלי בינה מלאכותית מעשיים למותג יופי עדכני.',
+      },
+    ],
+  },
+  insideAcademy: {
+    eyebrow: 'בתוך האקדמיה',
+    heading: 'סטודיו לעבודה, לא רק לתצוגה.',
+    body: 'כל עמדה, כל כלי, וכל פינה באקדמיה נבנו כדי לשקף תנאי עבודה אמיתיים — כי הכשרה שדומה למציאות היא ההכשרה שנשארת איתך.',
+    imageAlts: [
+      'המדריכה מדגימה טכניקה מקרוב',
+      'תקריב על כלים ומוצרים',
+      'תלמידות מתרגלות בעמדת העבודה',
+      'מבט רחב על סטודיו האקדמיה',
+    ],
+  },
+  whatYouLeaveWith: {
+    eyebrow: 'מה תצאו עם זה',
+    heading: 'מה שלוקחים איתכן.',
+    points: [
+      'טכניקה שאתן סומכות עליה, שחודדה בתרגול מעשי אמיתי — לא רק בצפייה.',
+      'תעודה מקצועית עם סיום מוצלח של הקורס.',
+      'תחילתו של תיק עבודות — עבודה אמיתית שביצעתן, לא רק תרגיל כיתתי.',
+    ],
+  },
+  instructor: {
+    eyebrow: 'על מייסדת האקדמיה',
+    heading: 'ניסיון שנבנה על פני שנים, עכשיו לשירותכן.',
+    role: 'מייסדת ומדריכה ראשית',
+    bio: [
+      'לפני SHE, מייסדת האקדמיה בילתה למעלה מעשור בבניית קריירה מקצועית בתחום הקוסמטיקה — כמטפלת, כמדריכה, ולבסוף כמנהלת פרקטיקת הוראה עצמאית משלה.',
+      'במהלך השנים הללו היא הכשירה באופן אישי למעלה מ-500 תלמידות. SHE הוא המקום שבו הניסיון הזה הופך לאקדמיה רשמית — בנויה בדיוק כפי שהיא תמיד רצתה שההכשרה שלה תהיה.',
+    ],
+    imageAlt: 'תמונת דיוקן של מייסדת האקדמיה',
+  },
+  faq: {
+    eyebrow: 'שאלות נפוצות',
+    heading: 'שאלות שאנחנו עונות עליהן הרבה.',
+    items: [
+      {
+        question: 'האם אני צריכה ניסיון קודם כדי להצטרף?',
+        answer: 'קוסמטיקה 1 נבנתה להיות נקודת ההתחלה שלכן — לא נדרש ניסיון קודם. קוסמטיקה 2 נבנית ישירות עליה.',
+      },
+      {
+        question: 'כמה עולה הקורס?',
+        answer: 'העלות משתנה לפי הקורס והמחזור הנוכחי — נעבור על כל הפרטים בשיחת הייעוץ.',
+      },
+      {
+        question: 'האם אקבל תעודה?',
+        answer: 'כן — תעודה מקצועית עם סיום מוצלח של הקורס.',
+      },
+      {
+        question: 'איפה מתקיימים הקורסים?',
+        answer: 'פרונטלית, באקדמיה עצמה. נשתף אתכן בכתובת המלאה בעת קביעת מועד הייעוץ.',
+      },
+      {
+        question: 'מה קורה אחרי שאני שולחת פנייה?',
+        answer: 'ניצור קשר כדי להבין מה אתן מחפשות, נענה על שאלותיכן, ונקבע מועד לביקור באקדמיה או לשיחת טלפון — בלי לחץ ובלי התחייבות.',
+      },
+    ],
+  },
+  apply: {
+    eyebrow: 'הצעד הבא',
+    heading: 'היי SHE.',
+    body: 'התחילו בשיחה פשוטה. נענה על שאלותיכן ונקבע מועד לייעוץ או לביקור באקדמיה.',
+    cta: 'קביעת ייעוץ',
+  },
+} satisfies HomepageCopy
+
+const en = {
+  hero: {
+    eyebrow: 'A premium cosmetics academy',
+    heading: 'Become SHE.',
+    lead: 'A considered space for women who take their craft seriously — professional cosmetics education, built to an international standard.',
+    cta: 'Book a Consultation',
+  },
+  manifesto: {
+    eyebrow: 'Our Philosophy',
+    heading: 'Craft, taken seriously.',
+    body: 'SHE exists for a simple reason: cosmetics education here deserves the same rigor as any serious profession. We teach technique the way a serious kitchen teaches knife skills — precisely, patiently, and without shortcuts. What you build here isn’t a certificate to hang on a wall. It’s a hand that knows exactly what it’s doing.',
+  },
+  whySHE: {
+    eyebrow: 'Why SHE',
+    heading: 'The difference is in the details.',
+    pillars: [
+      {
+        title: 'Taught by real experience',
+        body: 'Every technique you learn has been tested on real clients, over more than a decade of hands-on work — not adapted from a textbook.',
+      },
+      {
+        title: 'Hands-on from day one',
+        body: 'Less sitting, more doing. You’ll spend your time at the station, not in a lecture hall.',
+      },
+      {
+        title: 'Built for the business, not just the craft',
+        body: 'Technique gets you hired. Understanding your brand and your client gets you booked. We teach both.',
+      },
+    ],
+  },
+  courses: {
+    eyebrow: 'Courses',
+    heading: 'Current Courses',
+    intro: 'Three courses, one clear path — from the fundamentals to building a business around your craft.',
+    items: [
+      {
+        slug: 'cosmetics-1',
+        title: 'Cosmetics 1',
+        description: 'Your starting point — core technique, product knowledge, and the habits that separate careful work from rushed work.',
+      },
+      {
+        slug: 'cosmetics-2',
+        title: 'Cosmetics 2',
+        description: 'Building on Cosmetics 1 — advanced technique and the judgment to handle real client situations with confidence.',
+      },
+      {
+        slug: 'branding-ai-beauty',
+        title: 'Branding & AI for Beauty Businesses',
+        description: 'For graduates ready to build a business around their craft — positioning, presence, and practical AI tools for a modern beauty brand.',
+      },
+    ],
+  },
+  insideAcademy: {
+    eyebrow: 'Inside the Academy',
+    heading: 'A studio built to work in, not just look at.',
+    body: 'Every station, every tool, every corner of the academy is set up to mirror real working conditions — because training that resembles reality is training that stays with you.',
+    imageAlts: [
+      'Instructor demonstrating technique up close',
+      'Close-up of tools and products',
+      'Students practicing at the station',
+      'Wide view of the academy studio',
+    ],
+  },
+  whatYouLeaveWith: {
+    eyebrow: 'What You Leave With',
+    heading: 'What you take with you.',
+    points: [
+      'Technique you can stand behind, refined through real hands-on practice — not just watching.',
+      'A professional diploma upon successful completion.',
+      'The start of a portfolio: real work you did, not a class demo.',
+    ],
+  },
+  instructor: {
+    eyebrow: 'About the Founder',
+    heading: 'Years of experience, now put to work for you.',
+    role: 'Founder & Lead Instructor',
+    bio: [
+      'Before SHE, our founder spent more than a decade building a career in professional cosmetics — as a practitioner, an educator, and eventually running her own teaching practice.',
+      'Over that time, she personally trained more than 500 students. SHE is where that experience becomes a formal academy — built the way she always wished her own training had been.',
+    ],
+    imageAlt: 'Portrait of the academy’s founder',
+  },
+  faq: {
+    eyebrow: 'FAQ',
+    heading: 'Questions we hear a lot.',
+    items: [
+      {
+        question: 'Do I need experience to join?',
+        answer: 'Cosmetics 1 is designed as your starting point — no prior experience required. Cosmetics 2 builds directly on it.',
+      },
+      {
+        question: 'How much does a course cost?',
+        answer: 'Pricing depends on the course and the current intake — we’ll walk you through it on a consultation call.',
+      },
+      {
+        question: 'Do I get a certificate?',
+        answer: 'Yes — a professional diploma upon successful completion.',
+      },
+      {
+        question: 'Where are courses held?',
+        answer: 'In person, at the academy. We’ll share the full address once your consultation is scheduled.',
+      },
+      {
+        question: 'What happens after I apply?',
+        answer: 'We’ll reach out to understand what you’re looking for, answer your questions, and set up a time to visit the academy or speak by phone — no pressure, no obligation.',
+      },
+    ],
+  },
+  apply: {
+    eyebrow: 'Next Step',
+    heading: 'Become SHE.',
+    body: 'Start with a simple conversation. We’ll answer your questions and set up a consultation or a visit to the academy.',
+    cta: 'Book a Consultation',
+  },
+} satisfies HomepageCopy
+
+export const homepageCopy: Record<Locale, HomepageCopy> = { ar, he, en }
