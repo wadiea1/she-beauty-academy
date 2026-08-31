@@ -18,20 +18,20 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
-      # Must run before actions/setup-node so its pnpm-store cache step can
-      # find pnpm on PATH.
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+      # pnpm/setup replaces pnpm/action-setup + actions/setup-node: it
+      # downloads pnpm's self-contained binary and installs the JS runtime
+      # in one step. `install: false` because we run our own explicit
+      # `pnpm install --frozen-lockfile` below instead of the action's
+      # default auto-install.
+      - name: Setup pnpm and Node.js
+        uses: pnpm/setup@v1
         with:
           version: 11.22.0
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '24'
-          cache: pnpm
+          runtime: node@24
+          cache: true
+          install: false
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
