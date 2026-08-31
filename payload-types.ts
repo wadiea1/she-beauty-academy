@@ -72,6 +72,7 @@ export interface Config {
     courses: Course;
     faqs: Faq;
     testimonials: Testimonial;
+    applications: Application;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -84,6 +85,7 @@ export interface Config {
     courses: CoursesSelect<false> | CoursesSelect<true>;
     faqs: FaqsSelect<false> | FaqsSelect<true>;
     testimonials: TestimonialsSelect<false> | TestimonialsSelect<true>;
+    applications: ApplicationsSelect<false> | ApplicationsSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -321,6 +323,72 @@ export interface Testimonial {
   createdAt: string;
 }
 /**
+ * Leads from the website. Never publicly readable.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "applications".
+ */
+export interface Application {
+  id: number;
+  status:
+    | 'new'
+    | 'automatic_followup'
+    | 'engaged'
+    | 'qualified'
+    | 'consultation_booked'
+    | 'visited'
+    | 'enrolled'
+    | 'no_answer'
+    | 'follow_up'
+    | 'not_now'
+    | 'not_interested'
+    | 'invalid'
+    | 'spam';
+  /**
+   * Staff member handling this lead.
+   */
+  assignedTo?: (number | null) | User;
+  /**
+   * Scheduled consultation or visit, once booked.
+   */
+  consultationAt?: string | null;
+  /**
+   * e.g. "homepage", "instagram", "referral".
+   */
+  source?: string | null;
+  name: string;
+  phone: string;
+  email?: string | null;
+  preferredLanguage: 'ar' | 'he' | 'en';
+  interestedCourse?: (number | null) | Course;
+  /**
+   * The lead's own message, as submitted.
+   */
+  message?: string | null;
+  /**
+   * Staff-only notes — never shown to the lead.
+   */
+  internalNotes?: string | null;
+  utmSource?: string | null;
+  utmMedium?: string | null;
+  utmCampaign?: string | null;
+  /**
+   * When the lead agreed to the privacy policy.
+   */
+  privacyConsentAt: string;
+  /**
+   * Which privacy policy version was in effect, e.g. "v1".
+   */
+  privacyPolicyVersion?: string | null;
+  /**
+   * Separate, optional opt-in — never bundled with the privacy consent above.
+   */
+  marketingConsent?: boolean | null;
+  marketingConsentAt?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
@@ -363,6 +431,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'testimonials';
         value: number | Testimonial;
+      } | null)
+    | ({
+        relationTo: 'applications';
+        value: number | Application;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -519,6 +591,32 @@ export interface TestimonialsSelect<T extends boolean = true> {
   authorRole?: T;
   quote?: T;
   photo?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "applications_select".
+ */
+export interface ApplicationsSelect<T extends boolean = true> {
+  status?: T;
+  assignedTo?: T;
+  consultationAt?: T;
+  source?: T;
+  name?: T;
+  phone?: T;
+  email?: T;
+  preferredLanguage?: T;
+  interestedCourse?: T;
+  message?: T;
+  internalNotes?: T;
+  utmSource?: T;
+  utmMedium?: T;
+  utmCampaign?: T;
+  privacyConsentAt?: T;
+  privacyPolicyVersion?: T;
+  marketingConsent?: T;
+  marketingConsentAt?: T;
   updatedAt?: T;
   createdAt?: T;
 }

@@ -6,13 +6,14 @@ import { Media } from './collections/Media'
 import { Courses } from './collections/Courses'
 import { FAQs } from './collections/FAQs'
 import { Testimonials } from './collections/Testimonials'
+import { Applications } from './collections/Applications'
 
 export default buildConfig({
   admin: {
     user: Users.slug,
   },
 
-  collections: [Users, Media, Courses, FAQs, Testimonials],
+  collections: [Users, Media, Courses, FAQs, Testimonials, Applications],
 
   localization: {
     locales: [
