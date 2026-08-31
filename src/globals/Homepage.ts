@@ -105,8 +105,20 @@ export const Homepage: GlobalConfig = {
             {
               name: 'images',
               type: 'array',
-              admin: { description: 'Aim for 4, for the mosaic grid layout.' },
-              fields: [{ name: 'image', type: 'upload', relationTo: 'media', required: true }],
+              admin: {
+                description:
+                  'Aim for 4, for the mosaic grid layout. The photo is optional — the placeholder label shows until one is uploaded, so a shot can be planned here before the photography exists.',
+              },
+              fields: [
+                { name: 'image', type: 'upload', relationTo: 'media' },
+                {
+                  name: 'placeholderLabel',
+                  type: 'text',
+                  required: true,
+                  localized: true,
+                  admin: { description: 'Describes the planned shot, e.g. "Instructor demonstrating technique up close".' },
+                },
+              ],
             },
           ],
         },
@@ -142,6 +154,13 @@ export const Homepage: GlobalConfig = {
               fields: [{ name: 'paragraph', type: 'textarea', required: true, localized: true }],
             },
             { name: 'photo', type: 'upload', relationTo: 'media' },
+            {
+              name: 'photoAlt',
+              type: 'text',
+              required: true,
+              localized: true,
+              admin: { description: 'Describes the founder portrait — used as the placeholder label until a photo is uploaded.' },
+            },
           ],
         },
         {

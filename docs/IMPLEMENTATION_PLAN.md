@@ -101,12 +101,68 @@ and status is this file plus `git log`.
       course records (Cosmetics 1, Cosmetics 2, Branding & AI for Beauty
       Businesses) are not yet seeded — that's Milestone G, once the
       frontend is ready to read them.
-- [ ] **G — Connect public site to Payload** content instead of hardcoded
-      placeholders. Seed the 3 real courses at that point. Watch for CI
-      impact: once pages statically generate from Payload data, the CI
-      workflow's fake DB credentials (`.github/workflows/ci.yml`) will
-      need either a real `postgres:` service container or those routes
-      moving to on-demand rendering.
+- [ ] **G — Connect public site to Payload**. Branch
+      `feat/cms-homepage-integration`.
+
+      **Content mapping** (audited before implementation):
+      - → `Homepage` global: hero/manifesto/whySHE/coursesIntro/
+        insideAcademy/whatYouLeaveWith/instructor/faqIntro/apply — all
+        migrated verbatim from `src/content/homepage.ts`'s existing
+        `homepageCopy`, not rewritten. Images stay unset (no real
+        photography yet — `ImageFrame` placeholder continues to handle
+        that, unchanged).
+      - → `Courses` collection: the 3 real courses, from
+        `homepageCopy[locale].courses.items`. `pricingType: 'onRequest'`
+        (no real pricing exists). `status: 'published'`.
+      - → `FAQs` collection: the 5 items from
+        `homepageCopy[locale].faq.items`. `status: 'published'`.
+      - → `Navigation` global: nav items with **locale-agnostic** paths
+        (`''`, `'#courses'`, `'#academy'`, `'#faq'`) — the frontend
+        still prepends `/${locale}`, exactly as today. No locale baked
+        into a stored path.
+      - → `SiteSettings` global: whatsApp/Instagram/email/phone/address
+        all stay unset — none were ever provided, so none are invented.
+        `src/config/site.ts`'s two pure URL-builder functions
+        (`whatsappHref`/`instagramHref`) move to `src/lib/links.ts` as
+        input-taking functions instead of reading a static singleton;
+        the data-holding object itself is retired once parity is
+        confirmed.
+      - **Stays in the static i18n dictionaries, not CMS**: `nav.apply`
+        ("Book a Consultation") and all interaction/accessibility
+        vocabulary (open/close menu, skip-to-content, language switcher
+        labels, footer section labels like "Explore"/"Connect"). These
+        are recurring interface conventions applied identically across
+        components, not per-context editorial content — moving them to
+        Payload would make the CMS a presentation-configuration store,
+        which AGENTS.md explicitly rules out.
+
+      **Rendering strategy**: time-based ISR (`revalidate`), not
+      build-time SSG and not fully dynamic per-request rendering. Chosen
+      because this is a CMS-driven marketing site where staff expect a
+      publish to go live without a redeploy — build-time-only SSG fails
+      that expectation, while full per-request dynamic rendering pays a
+      DB round-trip for every visitor for content that changes at a
+      human editing pace. ISR gets both: fast cached responses, content
+      reflects a publish within the revalidate window. `generateStaticParams`
+      is removed from the locale segment so nothing is prerendered at
+      build time — `next build` therefore still needs no live database
+      access, which is a side effect of the architecture being right for
+      this site, not the reason it was chosen; documented in the CI
+      workflow and the Milestone G PR.
+      **Query architecture**: `src/lib/payload/` — a memoized
+      (`react cache()`) Payload client plus one function per content
+      need (`getHomepage`, `getPublishedCourses`, `getPublishedFAQs`,
+      `getNavigation`, `getSiteSettings`), each mapping raw Payload
+      shapes onto the existing `HomepageCopy`-compatible types so the
+      section components built in Milestone D need no changes. No
+      `overrideAccess`, no `draft: true` — these exercise the exact
+      published-only access boundary hardened in Milestone F/PR #3.
+      Missing *required* Homepage content (e.g. an unseeded database)
+      throws a clear error rather than silently rendering wrong-language
+      or blank content; missing Courses/FAQs render their section with
+      no items rather than failing the page, since a genuinely empty
+      list is a valid state for a list, not for the homepage's narrative
+      spine.
 - [ ] **H — Course listing/detail pages**.
 - [ ] **I — Lead/application flow** (Zod validation, spam protection,
       privacy/marketing consent kept separate).

@@ -707,7 +707,7 @@ export interface SiteSetting {
 export interface Navigation {
   id: number;
   /**
-   * Reorder by dragging. Path can be an in-page anchor ("#courses"), a site path ("/courses"), or a full external URL.
+   * Reorder by dragging. Use "/" for the homepage link itself; otherwise an in-page anchor ("#courses"), a site path ("/courses"), or a full external URL.
    */
   items?:
     | {
@@ -762,11 +762,15 @@ export interface Homepage {
     heading: string;
     body: string;
     /**
-     * Aim for 4, for the mosaic grid layout.
+     * Aim for 4, for the mosaic grid layout. The photo is optional — the placeholder label shows until one is uploaded, so a shot can be planned here before the photography exists.
      */
     images?:
       | {
-          image: number | Media;
+          image?: (number | null) | Media;
+          /**
+           * Describes the planned shot, e.g. "Instructor demonstrating technique up close".
+           */
+          placeholderLabel: string;
           id?: string | null;
         }[]
       | null;
@@ -795,6 +799,10 @@ export interface Homepage {
         }[]
       | null;
     photo?: (number | null) | Media;
+    /**
+     * Describes the founder portrait — used as the placeholder label until a photo is uploaded.
+     */
+    photoAlt: string;
   };
   faqIntro: {
     eyebrow: string;
@@ -899,6 +907,7 @@ export interface HomepageSelect<T extends boolean = true> {
           | T
           | {
               image?: T;
+              placeholderLabel?: T;
               id?: T;
             };
       };
@@ -927,6 +936,7 @@ export interface HomepageSelect<T extends boolean = true> {
               id?: T;
             };
         photo?: T;
+        photoAlt?: T;
       };
   faqIntro?:
     | T
