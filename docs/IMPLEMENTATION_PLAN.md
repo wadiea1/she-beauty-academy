@@ -90,7 +90,88 @@ and status is this file plus `git log`.
       `feat/homepage-editorial`.
 - [ ] **E — Motion system incl. "The Thread"**: Motion/Framer for standard
       component animation, restrained scroll-linked SVG thread signature,
-      `prefers-reduced-motion` respected throughout.
+      `prefers-reduced-motion` respected throughout. Branch
+      `feat/motion-system`.
+
+      **Audit** (before writing any implementation code): confirmed
+      zero existing motion handling anywhere in `src/` (`grep` for
+      `prefers-reduced-motion`, `framer-motion`, `motion`, `gsap` — no
+      matches). Confirmed the Milestone G query/rendering architecture
+      (`src/lib/payload/queries.ts`, `src/app/(frontend)/[locale]/
+      page.tsx`) is a plain Server Component tree with typed props —
+      motion is added purely as small Client Component wrappers around
+      that output; no content moves back out of Payload, no section is
+      reordered or redesigned. Package chosen: `motion` (npm package
+      `motion`, the rebranded Framer Motion, import path
+      `"motion/react"`) — verified compatible before installing
+      (registry: latest `13.1.1`, peer deps `react`/`react-dom`
+      `"^18.0.0 || ^19.0.0"`, satisfied by this project's React
+      `19.2.8`). No GSAP: Motion's `useScroll`/`useTransform` combined
+      with SVG's native `pathLength` normalization (see Thread notes
+      below) fully cover The Thread's scroll-linked line-drawing
+      without a second animation library.
+
+      **Motion map** (per section — all reveals are `whileInView`,
+      `viewport={{ once: true }}`, transform+opacity only, premium
+      "expo-out"-style easing `[0.16, 1, 0.3, 1]`; distances are along
+      the block axis, direction-agnostic under RTL/LTR by construction
+      since they translate on Y, not X):
+
+      | Section | What enters | Trigger | Distance/duration | Stagger |
+      |---|---|---|---|---|
+      | Hero | eyebrow → heading → lead → CTA → image, in sequence | Mount (already in viewport on load) | y 16px / 0.6s | 0.1s offset per element |
+      | Manifesto | eyebrow (fade only) → heading → body | Scroll into view | y 12–16px / 0.6s | none |
+      | WhySHE | eyebrow/heading, then 3 pillars | Scroll into view | y 16px / 0.5s | 0.09s between pillars |
+      | Courses | intro, then course cards | Scroll into view | y 16px / 0.5s | 0.09s between cards |
+      | InsideAcademy | intro, then image mosaic | Scroll into view | y 16px / 0.5s | 0.09s between images |
+      | WhatYouLeaveWith | list points | Scroll into view | y 12px / 0.5s | 0.07s between points |
+      | InstructorCredibility | image, eyebrow/heading/role/bio | Scroll into view | y 16px / 0.6s | none |
+      | FAQSection | eyebrow/heading, then each `<details>` row (entrance only — open/close stays native, unanimated) | Scroll into view | y 12px / 0.5s | 0.06s between rows |
+      | ApplyCTA | eyebrow/heading/body/CTAs | Scroll into view | y 16px / 0.6s | none |
+      | SocialProof | unchanged (renders `null` today; no images to animate yet) | — | — | — |
+
+      Every reveal is skipped (content renders at its final, static
+      position with full opacity, no transform) when
+      `useReducedMotion()` reports a preference for reduced motion —
+      checked per-component, not just once globally, so no path can
+      accidentally ship a transform under `prefers-reduced-motion:
+      reduce`. `ImageFrame` gets a single built-in opacity+subtle-scale
+      reveal (from `scale: 1.04, opacity: 0` to `scale: 1, opacity: 1`)
+      applied uniformly everywhere it's used, so the same treatment
+      covers today's placeholders and tomorrow's real Payload photos
+      with no per-callsite work.
+
+      **The Thread**: one continuous SVG line spanning Hero through
+      ApplyCTA (excluding SocialProof/Footer — the CTA is the intended
+      resolution point), positioned decoratively at the `inset-inline-
+      start` gutter of the content column, `aria-hidden="true"`,
+      `pointer-events-none`. Two path variants (desktop: richer 4–5-
+      wave S-curve; mobile ≤ lg: a narrower, simpler version of the
+      same curve), swapped via CSS breakpoint, both defined in
+      normalized SVG `viewBox` units (not document pixels) so the path
+      scales automatically to whatever the actual rendered height is —
+      resilient to Arabic/Hebrew/English copy-length differences by
+      construction, no hardcoded pixel geometry anywhere. Line-drawing
+      uses the path's `pathLength={1}` normalization attribute (not
+      `getTotalLength()` measurement) so `stroke-dasharray`/
+      `strokeDashoffset` are simple 0–1 values regardless of the path's
+      actual geometric length; `vector-effect: non-scaling-stroke`
+      keeps the stroke a true ~1px regardless of the non-uniform
+      viewBox stretching. Progress is driven by Motion's
+      `useScroll({ target, offset: ['start start', 'end end'] })` →
+      `useTransform` → bound via the `style` prop on a `motion.path`,
+      which updates outside React's render cycle (no per-scroll-event
+      `setState`). Under reduced motion, the line renders fully drawn
+      and static (a quiet decorative element, not an animation).
+
+      **Client boundaries**: `ImageFrame` and the new `src/components/
+      motion/` primitives (`Reveal`, `StaggerGroup`/`StaggerItem`,
+      `ThreadContainer`/`Thread`) are the only new Client Components.
+      Section components stay Server Components; they import the
+      motion wrappers the same way they already import `Heading`/
+      `Text`/etc. and pass CMS-sourced children through — the homepage
+      itself is not converted to a Client Component. No motion
+      component imports Payload.
 - [x] **F — Payload collections/globals**: `Media`, `Courses`, `FAQs`,
       `Testimonials` (architecture only, no seeded records), `Applications`
       (leads, staff-only access); globals `SiteSettings`, `Navigation`,
@@ -101,8 +182,15 @@ and status is this file plus `git log`.
       course records (Cosmetics 1, Cosmetics 2, Branding & AI for Beauty
       Businesses) are not yet seeded — that's Milestone G, once the
       frontend is ready to read them.
-- [ ] **G — Connect public site to Payload**. Branch
-      `feat/cms-homepage-integration`.
+- [x] **G — Connect public site to Payload**. Branch
+      `feat/cms-homepage-integration`, merged (PR #4).
+
+      **Terminology note**: the `/[locale]` route itself is still
+      dynamically rendered (no `generateStaticParams`, no full-page
+      ISR). What this milestone actually built is 60-second revalidated
+      *Payload data* caching via `unstable_cache` at the query layer —
+      not classic static ISR. The two are easy to conflate; precise
+      wording matters when discussing this architecture going forward.
 
       **Content mapping** (audited before implementation):
       - → `Homepage` global: hero/manifesto/whySHE/coursesIntro/
