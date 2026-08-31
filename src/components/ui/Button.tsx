@@ -2,7 +2,7 @@ import { cn } from '@/lib/cn'
 import Link from 'next/link'
 import type { AnchorHTMLAttributes, ButtonHTMLAttributes } from 'react'
 
-type Variant = 'primary' | 'secondary' | 'ghost' | 'inverse'
+type Variant = 'primary' | 'secondary' | 'ghost' | 'inverse' | 'outline-inverse'
 type Size = 'sm' | 'md' | 'lg'
 
 const base =
@@ -17,6 +17,11 @@ const variantClass: Record<Variant, string> = {
   // For CTAs sitting on a dark (`tone="ink"`) Section, where `primary`
   // would nearly disappear against the matching ink background.
   inverse: 'bg-porcelain text-ink hover:bg-champagne focus-visible:outline-porcelain',
+  // A lower-emphasis companion to `inverse` for the same dark
+  // backgrounds — `secondary`/`ghost` both assume a light background and
+  // render near-invisible cocoa/rosewood-ink text on ink.
+  'outline-inverse':
+    'border border-porcelain/50 text-porcelain hover:bg-porcelain hover:text-ink focus-visible:outline-porcelain',
 }
 
 const sizeClass: Record<Size, string> = {

@@ -67,11 +67,13 @@ and status is this file plus `git log`.
 - [x] **C — Navigation / footer**: accessible header with mobile drawer,
       language switcher, skip-to-content link, brand wordmark; footer with
       conditional contact/social CTAs.
-- [ ] **D — Homepage architecture**: full narrative homepage per the
+- [x] **D — Homepage architecture**: full narrative homepage per the
       section order in the brief (hero → manifesto → why SHE → courses →
       inside the academy → what you leave with → instructor credibility →
       FAQ → apply CTA → social → footer), with placeholder photography
-      slots and honest, non-fabricated copy.
+      slots (`ImageFrame`, see `PHOTOGRAPHY_BRIEF.md`) and honest,
+      non-fabricated copy (`src/content/homepage.ts`). Branch
+      `feat/homepage-editorial`.
 - [ ] **E — Motion system incl. "The Thread"**: Motion/Framer for standard
       component animation, restrained scroll-linked SVG thread signature,
       `prefers-reduced-motion` respected throughout.
