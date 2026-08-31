@@ -4,6 +4,9 @@ import { Heading } from '@/components/ui/Heading'
 import { Text } from '@/components/ui/Text'
 import { Eyebrow } from '@/components/ui/Eyebrow'
 import { CourseCard } from '@/components/ui/CourseCard'
+import { Reveal } from '@/components/motion/Reveal'
+import { StaggerGroup } from '@/components/motion/StaggerGroup'
+import { StaggerItem } from '@/components/motion/StaggerItem'
 import type { CourseContent, HomepageContent } from '@/lib/payload/queries'
 import type { Locale } from '@/i18n/config'
 
@@ -20,26 +23,33 @@ export function Courses({ copy, courses, ctaLabel, locale }: CoursesProps) {
   return (
     <Section id="courses" tone="shell" spacing="md">
       <Container width="editorial">
-        <Eyebrow>{copy.eyebrow}</Eyebrow>
-        <Heading as="h2" size="lg" className="mt-4 mb-4 max-w-xl">
-          {copy.heading}
-        </Heading>
-        <Text size="lg" tone="muted" className="mb-12 max-w-xl">
-          {copy.intro}
-        </Text>
+        <Reveal y={0}>
+          <Eyebrow>{copy.eyebrow}</Eyebrow>
+        </Reveal>
+        <Reveal delay={0.05}>
+          <Heading as="h2" size="lg" className="mt-4 mb-4 max-w-xl">
+            {copy.heading}
+          </Heading>
+        </Reveal>
+        <Reveal delay={0.1} y={12}>
+          <Text size="lg" tone="muted" className="mb-12 max-w-xl">
+            {copy.intro}
+          </Text>
+        </Reveal>
 
-        <div className="grid gap-8 sm:grid-cols-3">
+        <StaggerGroup className="grid gap-8 sm:grid-cols-3">
           {courses.map((course, i) => (
-            <CourseCard
-              key={course.slug}
-              index={i + 1}
-              title={course.title}
-              description={course.description}
-              href={`/${locale}#apply`}
-              ctaLabel={course.ctaLabel ?? ctaLabel}
-            />
+            <StaggerItem key={course.slug} className="h-full">
+              <CourseCard
+                index={i + 1}
+                title={course.title}
+                description={course.description}
+                href={`/${locale}#apply`}
+                ctaLabel={course.ctaLabel ?? ctaLabel}
+              />
+            </StaggerItem>
           ))}
-        </div>
+        </StaggerGroup>
       </Container>
     </Section>
   )
