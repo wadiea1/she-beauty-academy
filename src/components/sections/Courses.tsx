@@ -44,7 +44,7 @@ export function Courses({ copy, courses, ctaLabel, locale }: CoursesProps) {
                 index={i + 1}
                 title={course.title}
                 description={course.description}
-                href={`/${locale}#apply`}
+                href={`/${locale}/courses/${course.slug}`}
                 ctaLabel={course.ctaLabel ?? ctaLabel}
               />
             </StaggerItem>
