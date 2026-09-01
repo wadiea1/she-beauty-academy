@@ -69,8 +69,17 @@ export const Applications: CollectionConfig = {
     },
     {
       name: 'source',
-      type: 'text',
-      admin: { position: 'sidebar', description: 'e.g. "homepage", "instagram", "referral".' },
+      type: 'select',
+      // A controlled set, not freeform text (Milestone I): the public
+      // submission endpoint derives this value itself from whether a
+      // real course was resolved server-side — it's never accepted as
+      // client input, so an attacker can't pollute this field with an
+      // arbitrary string.
+      options: [
+        { label: 'Homepage', value: 'homepage' },
+        { label: 'Course page', value: 'course_page' },
+      ],
+      admin: { position: 'sidebar', description: 'Where on the site this lead submitted the form.' },
     },
     {
       type: 'row',
