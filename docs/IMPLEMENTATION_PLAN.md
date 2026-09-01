@@ -743,12 +743,31 @@ and status is this file plus `git log`.
       | | admin | editor | advisor |
       |---|---|---|---|
       | Applications read/update | ✓ | ✗ | ✓ |
-      | Applications create | ✓ | ✗ | ✓ (manually logging a lead) |
+      | Applications create | ✓ | ✗ | ✗ |
       | Applications delete | ✓ | ✗ | ✗ |
       | Courses/FAQs/Testimonials/Media/Homepage/Navigation/SiteSettings edit | ✓ | ✓ | ✗ (read-only) |
       | Media delete | ✓ | ✗ | ✗ (more consequential — could break a live page still referencing it) |
       | Users create/delete/change-role | ✓ | ✗ | ✗ |
       | Users read, update own profile | ✓ | ✓ | ✓ |
+
+      **Applications `create` is admin-only, not admin/advisor**
+      (corrected during PR review — an earlier draft of this milestone
+      gave advisor `create` too). The one legitimate write path into
+      this collection is the public `/api/apply` route: it validates
+      the submission server-side and writes via the Local API with
+      `overrideAccess: true`, which never touches this collection's
+      own access control at all — so advisor doesn't need `create`
+      for the real intake flow to keep working. Advisor `create` would
+      also have been able to set the audit-truth fields below (source,
+      privacyConsentAt, …) to arbitrary values at creation time even
+      though those same fields are locked against advisor on update —
+      field-level `access.update` has no say over a document's initial
+      values, so `create` access is what actually has to be
+      restrictive for those fields to mean anything. Verified: advisor
+      `POST /api/applications` now returns 403; admin `POST
+      /api/applications` still succeeds (used for manually logging a
+      lead who called in, say); `/api/apply` still returns 200 and
+      creates a correctly-populated record.
 
       **Role-escalation prevention**: the `role` field itself has
       `field.access.update: isAdmin` — a non-admin updating their own
@@ -801,26 +820,27 @@ and status is this file plus `git log`.
       control on `Applications`, unaffected by who's a valid
       `assignedTo` value).
 
-      **Manual WhatsApp convenience — implemented**: turned out to be
-      small enough to do properly rather than defer. A single
-      `'use client'` custom field component
-      (`src/components/admin/WhatsAppLink.tsx`), wired via the `phone`
-      field's `admin.components.afterInput` and registered through the
-      regenerated `importMap.js`, renders a plain `wa.me/<digits>`
-      link next to the phone field on the Applications detail view.
-      It reads the field's own live value with `@payloadcms/ui`'s
-      `useField` hook (added as a direct dependency, pinned to
-      3.88.0 — previously only present transitively via
-      `@payloadcms/next`) and strips non-digit characters only; it
-      never assumes or prepends a country code, since `phone` is
-      freeform text and guessing one would be inventing a business
-      fact. Still exactly the manual handoff the milestone scoped: no
-      Meta Cloud API, no Twilio, no message pre-fill, no background
-      job, no send of any kind, no claim anything was sent — the link
-      only opens WhatsApp's own compose UI, same as a staff member
-      retyping the number by hand. Verified live in the real Admin
-      UI: a disposable test lead with phone "050-123 4567" rendered a
-      working link with `href="https://wa.me/0501234567"`.
+      **Manual WhatsApp convenience — attempted, then reverted and
+      deferred** (corrected during PR review). A first pass built a
+      `'use client'` custom field component that stripped `phone` down
+      to digits and linked to `wa.me/<digits>`. That's unsafe: `phone`
+      is freeform text with no confirmed country-code convention (the
+      lead form intentionally doesn't rewrite what a visitor enters),
+      so a lead saved in local format (e.g. "050…") produces a wrong
+      or nonexistent wa.me destination — the earlier browser test only
+      proved the link was present in the DOM, not that it pointed
+      anywhere real. Removed entirely rather than shipped half-safe:
+      `src/components/admin/WhatsAppLink.tsx` deleted, its
+      registration on the `phone` field removed, `@payloadcms/ui`
+      dropped again as a direct dependency (nothing else in the
+      codebase used it), and the admin import map regenerated back to
+      its pre-Milestone-J state. A deliberate phone-number
+      normalization/country-code strategy is deferred to the later
+      WhatsApp architecture milestone (N) — no `libphonenumber`, no
+      hardcoded `+972` assumption, no Meta Cloud API/Twilio, just to
+      preserve a small convenience button. Business flow is
+      unaffected either way: staff see the lead's phone number in
+      Admin and open WhatsApp themselves.
 
       **Verification — real Local/REST APIs, disposable QA accounts**
       (never the real admin; all QA users/leads/test course deleted
@@ -829,23 +849,41 @@ and status is this file plus `git log`.
       covering the full admin/editor/advisor matrix on Applications,
       Users, Courses, and the Homepage global — anonymous access
       denied everywhere it must be; editor has zero Applications
-      access (403 on read/create); advisor can read/create/update
-      Applications but not delete (403); the five protected fields
-      (`source`, `privacyConsentAt`, `privacyPolicyVersion`,
-      `marketingConsentAt`, `preferredLanguage`) provably survive a
-      same-request tamper attempt from an advisor while `status` in
-      the same request does change — proving the protection is
-      per-field, not a whole-request rejection; a non-admin's attempt
-      to set their own `role` to `admin` returns 200 (self-update is
-      otherwise allowed) but the role demonstrably does not change;
-      only an admin can create Users or change another account's
-      role; Courses read is open to any staff role but write is
-      admin/editor only, delete admin-only for Media. All passed.
-      Confirmed along the way (not assumed): global updates in this
-      Payload version go through `POST /api/globals/:slug`, not
-      `PATCH` — a `PATCH` returns Payload's own 404, unrelated to
-      access control; verified from
+      access (403 on read/create); advisor can read/update
+      Applications but not create or delete (403 on both); the five
+      protected fields (`source`, `privacyConsentAt`,
+      `privacyPolicyVersion`, `marketingConsentAt`,
+      `preferredLanguage`) provably survive a same-request tamper
+      attempt from an advisor while `status` in the same request does
+      change — proving the protection is per-field, not a
+      whole-request rejection; a non-admin's attempt to set their own
+      `role` to `admin` returns 200 (self-update is otherwise allowed)
+      but the role demonstrably does not change; only an admin can
+      create Users or change another account's role; Courses read is
+      open to any staff role but write is admin/editor only, delete
+      admin-only for Media. All passed. Confirmed along the way (not
+      assumed): global updates in this Payload version go through
+      `POST /api/globals/:slug`, not `PATCH` — a `PATCH` returns
+      Payload's own 404, unrelated to access control; verified from
       `node_modules/payload/dist/globals/endpoints/index.js`.
+
+      **Correction re-verification (Applications `create` fix)**: a
+      second, focused round of 29 REST-API checks against fresh
+      disposable QA accounts confirmed — anonymous, editor, *and now
+      advisor* `POST /api/applications` all return 403; admin `POST
+      /api/applications` still succeeds; `POST /api/apply` (the real
+      public path) still returns 200 and creates a record with
+      server-controlled `status`/`source`/`preferredLanguage`/
+      `privacyConsentAt`/`privacyPolicyVersion` all correct; an
+      invalid `courseSlug` still 400s with a field error; advisor can
+      still read Applications and update `status`/`internalNotes`/
+      `consultationAt`/`assignedTo` (assigning to a valid admin/
+      advisor account) while the same protected fields still silently
+      resist a same-request tamper attempt; advisor delete is still
+      403; role escalation is still blocked; the public site still
+      loads in all 3 locales. All 29 passed; every QA fixture
+      (accounts and applications created during the run) was deleted
+      immediately afterward.
 
       Also verified in the real Payload Admin browser UI (headless
       Edge via CDP, same methodology as prior milestones) as QA

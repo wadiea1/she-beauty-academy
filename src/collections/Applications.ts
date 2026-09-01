@@ -31,8 +31,21 @@ const statusOptions = [
  * Access is admin/advisor only — editors get no access at all to
  * leads, which is personal contact data outside their editorial
  * remit. Advisors can read and update (work leads, change status,
- * assign, add notes) but never delete — only an admin can permanently
- * remove a lead.
+ * assign, add notes) but never create or delete.
+ *
+ * `create` is deliberately admin-only, NOT admin/advisor: the one
+ * legitimate write path into this collection is the public
+ * `/api/apply` route, which validates the submission server-side and
+ * writes via the Local API with `overrideAccess: true` — it never
+ * goes through this collection's own access control at all, so
+ * advisor doesn't need `create` for the real flow to keep working.
+ * Leaving `create` open to advisor would also have let an advisor
+ * set the audit-truth fields below (source, privacyConsentAt, …) to
+ * arbitrary values at creation time even though those same fields are
+ * locked against them on update — an asymmetry with no legitimate use
+ * that would have undermined the field-integrity protections that
+ * `create` bypasses by definition (field-level `access.update` has no
+ * say over the initial values a document is created with).
  *
  * Field integrity: a handful of fields record facts about how/when a
  * lead was captured (source, preferredLanguage, and the consent
@@ -67,7 +80,10 @@ export const Applications: CollectionConfig = {
   access: {
     // Never public — leads must not be exposed via the read API.
     read: isAdminOrAdvisor,
-    create: isAdminOrAdvisor,
+    // Admin only — see the collection-level comment above for why
+    // advisor doesn't get this. The real public write path
+    // (/api/apply) never goes through this access control at all.
+    create: isAdmin,
     update: isAdminOrAdvisor,
     // Deleting a lead is more consequential than working one — admin
     // only.
@@ -139,19 +155,20 @@ export const Applications: CollectionConfig = {
           fields: [
             {
               type: 'row',
+              // `phone` deliberately has no manual-WhatsApp-link
+              // affordance (attempted and reverted in Milestone J):
+              // it's freeform text with no confirmed country-code
+              // convention, so stripping it to digits and building a
+              // wa.me/<digits> link risks producing a wrong or
+              // nonexistent destination for any lead saved in local
+              // format. A safe phone-number normalization strategy is
+              // deferred to the later WhatsApp architecture milestone
+              // — staff copy the visible number and open WhatsApp
+              // themselves in the meantime, which is slower but never
+              // wrong.
               fields: [
                 { name: 'name', type: 'text', required: true },
-                {
-                  name: 'phone',
-                  type: 'text',
-                  required: true,
-                  admin: {
-                    // Manual WhatsApp handoff — a plain wa.me deep
-                    // link next to the number, nothing automated. See
-                    // src/components/admin/WhatsAppLink.tsx.
-                    components: { afterInput: ['@/components/admin/WhatsAppLink#WhatsAppLink'] },
-                  },
-                },
+                { name: 'phone', type: 'text', required: true },
               ],
             },
             { name: 'email', type: 'email' },
