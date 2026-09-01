@@ -1,14 +1,16 @@
 import type { MetadataRoute } from 'next'
 import { absoluteUrl, isSearchIndexingAllowed } from '@/lib/seo/baseUrl'
 
-// robots.js/ts is a special Route Handler that Next caches by default
-// (see the file-convention docs) — this `revalidate` export is the
-// documented way to opt out of that, and unlike the page-rendering
-// case (see [locale]/layout.tsx's own comment on its own, ineffective
-// `revalidate` export), it genuinely applies here: Route Handler
-// caching is a materially different mechanism from page/fetch
-// caching.
-export const revalidate = 60
+// robots.js/ts is a special Route Handler that Next caches by
+// default (see the file-convention docs), which would otherwise bake
+// in whatever ALLOW_SEARCH_INDEXING/NEXT_PUBLIC_SERVER_URL happen to
+// be set at `next build` time — wrong if a deployment platform lets
+// either change without a full rebuild. force-dynamic (not a
+// `revalidate` export — see sitemap.ts's comment for why that
+// alternative caused a real CI failure on that file) defers this to
+// request time instead, matching every other route in this app; no
+// database access here either way, so no build-time cost either way.
+export const dynamic = 'force-dynamic'
 
 /**
  * Never a hardcoded `Disallow: /` guess, and never a blanket `Allow`

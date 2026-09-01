@@ -1034,15 +1034,26 @@ and status is this file plus `git log`.
       that document's own `updatedAt` (extended `CourseContent` /
       `HomepageContent` to expose it — additive, not a breaking
       change to either type). No `changeFrequency`/`priority` — no
-      real basis to assign either. `export const revalidate = 60`
-      on both `sitemap.ts` and `robots.ts`: unlike the page-rendering
-      case documented above (where a bare `revalidate` export does
-      nothing for non-`fetch` Payload calls), Next's own docs are
-      explicit that these two are cached *Route Handlers* by default,
-      and a `revalidate`/`dynamic` config option is the documented way
-      to opt out of that — a materially different caching model from
-      pages, so the fix that mattered for pages doesn't apply here and
-      this export does.
+      real basis to assign either. `export const dynamic =
+      'force-dynamic'` on both `sitemap.ts` and `robots.ts` — corrected
+      from an initial `revalidate = 60`, which broke CI. Next's own
+      docs are explicit that these two are cached *Route Handlers* by
+      default, materially different from the page-rendering case
+      documented above; `revalidate` is the *documented* way to opt a
+      cached Route Handler out of indefinite caching, but verified live
+      that it wasn't sufficient here — Next still attempted to
+      **prerender `/sitemap.xml` during `next build`**, which calls
+      `getPublishedCourses`/`getHomepage` and needs a live Postgres
+      connection; this app's CI build deliberately has none (the same
+      "no live database access at build time" invariant every page in
+      this app already relies on — see `[locale]/layout.tsx`'s own
+      comment on why `generateStaticParams` is never used here), so
+      the build failed with `ECONNREFUSED`. `force-dynamic` defers the
+      route to request time entirely, so the database call only ever
+      happens on a real request — freshness stays bounded by the
+      existing 60s `unstable_cache` TTL inside the query layer, exactly
+      as every page already relies on; the route itself needs no
+      caching on top of that.
 
       **Robots** (`src/app/robots.ts`) — indexing gated on
       `ALLOW_SEARCH_INDEXING` as above: disallowed everywhere by

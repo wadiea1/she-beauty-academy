@@ -3,10 +3,23 @@ import { defaultLocale, locales } from '@/i18n/config'
 import { getHomepage, getPublishedCourses } from '@/lib/payload/queries'
 import { absoluteUrl } from '@/lib/seo/baseUrl'
 
-// Same caching rationale as robots.ts — this genuinely opts the
-// Route Handler out of Next's default indefinite caching (see that
-// file's comment for why this differs from the page-rendering case).
-export const revalidate = 60
+// Forces this route to render at request time, never during `next
+// build` — matching the same invariant every page in this app
+// already relies on (no generateStaticParams anywhere; see
+// [locale]/layout.tsx's own comment on why: this is a CMS-driven site
+// where a Payload publish must go live without a redeploy). A real,
+// verified failure: an earlier `export const revalidate = 60` here
+// (the documented way to opt a cached Route Handler out of Next's
+// default indefinite caching) still let Next attempt to prerender
+// this route DURING the build — which needs a live Postgres
+// connection this app's CI build deliberately doesn't have (same
+// principle as every page), and broke CI. `force-dynamic` defers
+// entirely to request time, so the actual database call only ever
+// happens when a real request arrives; freshness is still bounded by
+// the 60s unstable_cache TTL already inside getPublishedCourses/
+// getHomepage, exactly like every page in this app already relies on
+// — this route needs no caching of its own on top of that.
+export const dynamic = 'force-dynamic'
 
 function languageAlternates(pathFor: (locale: (typeof locales)[number]) => string) {
   return {
