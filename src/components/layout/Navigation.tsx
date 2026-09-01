@@ -104,7 +104,12 @@ export function Navigation({ locale, dict, navItems }: NavigationProps) {
 
           <div className="hidden items-center gap-6 md:flex">
             <LanguageSwitcher locale={locale} localizedPath={localizedPath} />
-            <Button href={`${homeHref}#apply`} size="sm">
+            {/* A same-page anchor, not a locale-prefixed path — see
+             * ApplyCTA.tsx (Milestone I). `/${locale}#apply` only
+             * worked by coincidence from the homepage; from a course
+             * page it would navigate away instead of scrolling to
+             * that page's own form. */}
+            <Button href="#apply" size="sm">
               {dict.nav.apply}
             </Button>
           </div>
@@ -167,12 +172,7 @@ export function Navigation({ locale, dict, navItems }: NavigationProps) {
                   {item.label}
                 </Link>
               ))}
-              <Button
-                href={`${homeHref}#apply`}
-                size="lg"
-                className="mt-4"
-                onClick={() => setOpen(false)}
-              >
+              <Button href="#apply" size="lg" className="mt-4" onClick={() => setOpen(false)}>
                 {dict.nav.apply}
               </Button>
             </nav>

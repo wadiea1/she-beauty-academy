@@ -4,6 +4,7 @@ import { isLocale } from '@/i18n/config'
 import { getDictionary } from '@/i18n/getDictionary'
 import {
   getPublishedCourseBySlug,
+  getPublishedCourses,
   getPublishedFAQsForCourse,
   getSiteSettings,
   type CourseDetail,
@@ -97,10 +98,11 @@ export default async function CoursePage({ params }: PageProps<'/[locale]/course
   const { locale, slug } = await params
   if (!isLocale(locale)) notFound()
 
-  const [dict, course, siteSettings] = await Promise.all([
+  const [dict, course, siteSettings, allCourses] = await Promise.all([
     getDictionary(locale),
     getPublishedCourseBySlug(locale, slug),
     getSiteSettings(locale),
+    getPublishedCourses(locale),
   ])
 
   // Deliberately not distinguishing "no such slug" from "matches an
@@ -207,6 +209,10 @@ export default async function CoursePage({ params }: PageProps<'/[locale]/course
         ctaLabel={course.ctaLabel ?? dict.nav.apply}
         whatsappLabel={dict.footer.whatsapp}
         whatsappNumber={siteSettings.whatsappNumber}
+        locale={locale}
+        courses={allCourses}
+        preselectedCourseSlug={course.slug}
+        applyFormDict={dict.applyForm}
       />
     </>
   )

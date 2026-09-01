@@ -70,6 +70,25 @@ and status is this file plus `git log`.
   models" commit for details): never thread the current request's `req`
   into a hook's own nested `findByID` call on the same document, it
   corrupts the outer write.
+- **No web payment — ever, by design, not a missing feature.** Confirmed
+  business decision: SHE Beauty Academy will not accept payments through
+  this website. The intended commercial flow is entirely off-platform:
+  website (lead/consultation form) → WhatsApp conversation with the
+  academy → staff discusses course, price, dates, questions → enrollment
+  and payment are handled manually/off-site by admin staff. Concretely,
+  this means the codebase must never grow: online checkout, Stripe,
+  PayPal, or any other payment-provider integration; credit-card
+  handling of any kind; cart/order/payment API routes; a payment/order
+  Payload collection or database model; a "Pay now" button; or storage of
+  any payment/card information. `Applications` (Milestone I) is the
+  entire commercial-conversion data model this site owns — a lead
+  record, nothing past it. The (not-yet-built) future flow is: lead
+  submitted → confirmation → WhatsApp handoff/follow-up → staff/AI
+  conversation (Milestone N) → consultation/visit → admin manually
+  confirms enrollment, all outside this codebase. If a future milestone
+  brief ever asks for checkout/payment on this site, that contradicts
+  this recorded decision and should be confirmed explicitly before
+  building anything, not assumed to supersede it silently.
 
 ## Milestones
 
@@ -448,14 +467,264 @@ and status is this file plus `git log`.
       rather than a fabricated absolute domain; revisit once a real
       domain is set (Milestone M).
 - [ ] **I — Lead/application flow** (Zod validation, spam protection,
-      privacy/marketing consent kept separate).
+      privacy/marketing consent kept separate). Branch
+      `feat/lead-engine`. This milestone is the secure intake only:
+      visitor → validated submission → stored lead, visible to staff
+      in Payload. No WhatsApp/email sending, no AI, no scheduling —
+      those are later milestones. No payment — that's never coming to
+      this website at all; see the no-web-payment decision below.
+
+      **Audit**: `Applications` (Milestone F) already anticipated this
+      exact architecture — its own comment says the public form "will
+      call the Local API from a server Route Handler (with Zod
+      validation and spam protection) using `overrideAccess: true`,
+      rather than writing through this collection's own access
+      control." `access.create` is staff-only
+      (`Boolean(req.user)`) — confirmed this already blocks anonymous
+      `POST /api/applications` (Payload's own generated REST route),
+      so the *only* intended public write path is the new controlled
+      endpoint, not a loosened collection permission. The lead
+      lifecycle (`status`, `new` default, side outcomes) already
+      matches what's needed — not touched. `preferredLanguage`
+      already defaults from the 3 real locales.  `interestedCourse`
+      (relationship, optional — "general" is a valid unset state),
+      `email` (optional), `message` (optional), `privacyConsentAt`
+      (required date), `privacyPolicyVersion`, `marketingConsent`/
+      `marketingConsentAt` (separate, conditional) all already exist
+      and already match the required shape. **One deliberate schema
+      change**: `source` was a freeform `text` field — changed to a
+      `select` (`homepage` | `course_page`) so an attacker can't
+      submit an arbitrary string into it; the server derives which
+      value applies (never trusts a client-submitted source), so this
+      also isn't part of the public input schema at all.
+
+      **Route Handler, not a Server Action** — chosen after reading
+      this Next version's own security docs
+      (`node_modules/next/dist/docs/01-app/02-guides/data-security.md`).
+      Server Actions get a genuinely useful *built-in* protection
+      (Origin-vs-Host header comparison, aborting the request on
+      mismatch) that a Route Handler doesn't get for free — a real
+      point in their favor. But Server Actions are invoked via an
+      internal, encrypted-action-ID wire protocol, not a plain JSON
+      POST — much harder to drive with the kind of direct,
+      reproducible malicious-input testing this milestone explicitly
+      requires (malformed JSON, wrong content-type, oversized bodies,
+      forged fields sent as raw HTTP). A Route Handler
+      (`POST /api/apply`) gives a conventional, curl-testable REST
+      endpoint; the Origin-vs-Host check Server Actions get for free
+      is reimplemented explicitly here instead (see **CSRF/Origin**
+      below) — not a gap, a deliberate trade for testability.
+
+      **Route precedence, verified**: `/api/apply` (this new literal
+      route) and Payload's generated catch-all
+      (`src/app/(payload)/api/[...slug]/route.ts`) both resolve under
+      `/api/*`. Next.js resolves a static segment before a dynamic
+      catch-all at the same path, so `/api/apply` reaches this route,
+      not Payload's — confirmed live once the route existed (see
+      commit), not assumed from routing rules alone.
+
+      **Zod input schema** (`src/lib/applications/schema.ts`) — only
+      what a visitor actually supplies:
+      `name` (trimmed, 2–100 chars), `phone` (trimmed, 6–30 chars,
+      light whitespace/separator normalization — no aggressive
+      international phone-parsing library, so a legitimate Israeli/
+      Palestinian/international number is never rejected for not
+      matching an assumed format), `email` (optional, trimmed,
+      lower-cased, real email shape), `message` (optional, ≤2000
+      chars), `courseSlug` (optional string — validated server-side
+      against real *published* courses via the existing course query
+      layer, never trusted as an ID), `locale` (one of the 3 real
+      locales), `marketingConsent` (optional boolean, default false),
+      `privacyConsentGiven` (must literally be `true` — the required
+      checkbox), `honeypot` (must be empty). No `status`, no
+      `privacyConsentAt`, no `privacyPolicyVersion`, no `source` in
+      the input shape at all — those are server-set, never accepted
+      from the client even if present in the request body.
+
+      **Server-trusted fields**: `status: 'new'` always;
+      `privacyConsentAt: new Date()` (server clock, never the
+      browser's); `privacyPolicyVersion` from one central constant
+      (`src/lib/legal.ts`); `source` derived from whether a validated
+      course was resolved (`course_page` / `homepage`), never read
+      from the request; `marketingConsentAt` set only when
+      `marketingConsent === true`, left unset otherwise.
+
+      **No real privacy policy exists yet** — verified (no policy
+      page/content anywhere in the repo). Per explicit instruction,
+      no legal document is fabricated. `PRIVACY_POLICY_VERSION` in
+      `src/lib/legal.ts` is set to an explicit, honestly-named
+      placeholder (`'unpublished-v0'`), documented as blocking a
+      genuinely launch-ready public submission until real legal
+      content and a real policy version exist. The consent checkbox
+      itself doesn't link to or reference a nonexistent formal
+      document — its label is a minimal, true statement ("I agree
+      that SHE Beauty Academy may contact me about this inquiry"),
+      not a claim about a policy that doesn't exist.
+
+      **Spam/abuse (MVP, documented limits)**:
+      - Honeypot field, hidden from sighted/keyboard users
+        (`aria-hidden`, off-screen, `tabIndex={-1}`, `autoComplete`
+        set to something a form-filling bot tends to populate) — a
+        filled honeypot returns the *same* success response without
+        creating a record, so an automated submitter gets no signal
+        its submission was detected.
+      - Rate limiting: a small `RateLimiter` interface
+        (`src/lib/rateLimit.ts`) with an in-memory implementation for
+        this deployment stage — **explicitly not durable across
+        multiple server instances**; each process gets its own
+        independent counter, so it's trivially bypassed the moment
+        this app runs on more than one instance (most serverless
+        deployments). No Redis/Upstash was wired in — there's no
+        provisioned account/credentials for one yet, and hardcoding a
+        fake provider would be worse than an honestly-documented
+        single-instance limitation. A durable store is required before
+        a real multi-instance deployment (Milestone M territory).
+      - Duplicate protection: before creating a record, checks for an
+        existing Application with the same normalized phone *and* the
+        same resolved course (or both general) created within the
+        last 10 minutes; if found, still returns success (a genuine
+        returning visitor shouldn't see an error) but skips the
+        duplicate write. Not a CRM-grade dedup system — a person is
+        never permanently blocked from submitting again.
+      - Request-size guard: rejects bodies over a small fixed ceiling
+        (this form's real payload is well under 1KB) and non-JSON
+        content types before attempting to parse anything.
+
+      **CSRF/Origin**: this is a public write endpoint, so the Route
+      Handler manually compares the request's `Origin` header against
+      its own `Host` (falling back to `X-Forwarded-Host`) and rejects
+      a mismatch — the same check Next.js's Server Actions perform
+      automatically, reimplemented here since a Route Handler doesn't
+      get it for free. No separate CSRF-token machinery was added on
+      top of that — origin/host comparison plus same-site cookies
+      (the browser default) is the documented, standard mitigation for
+      this shape of endpoint, and anything more would be complexity
+      without a matching threat this architecture actually has (no
+      session cookies, no state-changing GETs).
+
+      **Cache invalidation**: submitting a lead never touches
+      `unstable_cache`/`revalidateTag` for homepage/course/navigation
+      data — it's a plain Payload Local API write
+      (`overrideAccess: true`) on a collection none of the cached
+      *read* functions in `src/lib/payload/queries.ts` ever touch, so
+      there's no invalidation risk to guard against by construction,
+      not by a rule that has to be remembered.
+
+      **Course preselection**: the reusable form shows a course select
+      (the 3 real courses + "General / not sure yet"), preselected to
+      the current course on a course page and to "General" on the
+      homepage — editable either way, since a visitor might have
+      landed on one course's page but actually want another. The
+      *submitted* value is always re-validated server-side against
+      real published courses regardless of what the client sends.
+
+      **CTA integration**: `ApplyCTA`'s own former primary button (a
+      self-referencing `#apply` placeholder, since no real flow
+      existed) is replaced by the actual form — the section's intro
+      copy stays, the WhatsApp button stays as an independent, always-
+      available alternative contact method. Hero/Nav/CourseCard CTAs
+      still say "Book a Consultation" and still scroll to `#apply`;
+      arriving there now shows a real form instead of another button.
+      **Navigation's own CTA had the same bug already found and fixed
+      in `ApplyCTA` during Milestone H** — it hardcoded
+      `/${locale}#apply`, which only worked by coincidence on the
+      homepage; from a course page it would navigate away instead of
+      scrolling to that page's own form. Fixed to a plain `#apply`
+      anchor, same precedent.
+
+      **Verified live** (every claim above proven, not assumed — real
+      HTTP requests against a production build, disposable QA data
+      deleted afterward, real course/testimonial counts reconfirmed
+      untouched):
+      - Route precedence: `POST /api/apply` reaches this handler, not
+        Payload's catch-all (confirmed by its distinct `{"ok":true}`
+        response shape vs. Payload's own error shape).
+      - 3 valid submissions (`en`/`ar`/`he`, one per locale, one with
+        a resolved course, one general, one with marketing consent) —
+        every stored field correct: `status: 'new'`, derived `source`,
+        resolved `interestedCourse`, real server `privacyConsentAt`,
+        `privacyPolicyVersion: 'unpublished-v0'`, `marketingConsentAt`
+        set only when consent was true.
+      - Forged operational fields in the request body
+        (`status: 'enrolled'`, a 2020 `privacyConsentAt`, a fake
+        `source`, `internalNotes`, `assignedTo`) — all silently
+        ignored; the stored record has the server's own values in
+        every case, not the attacker's.
+      - **Correction**: an earlier version of this milestone let a
+        non-empty but unresolvable `courseSlug` silently downgrade to
+        a general inquiry (submission succeeds, `interestedCourse`
+        left unset) — that conflated "no course was requested" with
+        "a course was requested but isn't available," which a stale
+        page, changed CMS content, or a forged request could trigger
+        for real. Fixed: `courseSlug` omitted/empty is still a valid
+        general inquiry, but a non-empty `courseSlug` that doesn't
+        resolve to a real published course now rejects the whole
+        submission (`400`, a `courseSlug` field error, no record
+        created) rather than silently proceeding as general. `source`
+        is only ever `homepage`/`course_page` after this resolution
+        succeeds — an invalid slug can no longer quietly relabel
+        itself as a `homepage` submission. The response is
+        deliberately identical whether the slug never existed or
+        matches a real-but-unpublished course (both queries return
+        zero docs from the same published-only boundary), so the API
+        never reveals which case it was. Verified live: general
+        inquiry (`courseSlug` omitted) → `200`, 1 record,
+        `interestedCourse` unset; a real published slug → `200`,
+        correctly resolved; a completely fake slug → `400`, **zero**
+        records created; a disposable draft/unpublished course's own
+        slug → `400`, **zero** records created, response
+        byte-for-byte identical to the fake-slug case — then deleted.
+      - Honeypot filled — same `{"ok":true}` response as a real
+        submission, but confirmed via document count that **no
+        record was created**.
+      - Missing name/phone, invalid email, missing privacy consent —
+        each a distinct `400` with a field-scoped error, nothing else
+        accepted.
+      - Malformed JSON body — `400`. Wrong/missing `Content-Type`
+        (`application/x-www-form-urlencoded`, `text/plain`, absent)
+        — `415`. Oversized body (>10KB) — `413`. An in-range body
+        with one field over its own max (2000-char message) — `400`
+        field validation, proving the two size checks are independent
+        layers, not one substituting for the other.
+      - Origin header matching the request's own host — succeeds.
+        Origin set to an unrelated domain — `403`, before the body is
+        even parsed.
+      - Direct `POST /api/applications` (Payload's own generated REST
+        route, bypassing `/api/apply` entirely) — `403`, same as
+        anonymous `GET`. Confirms the collection's own access control
+        is still the real backstop, not just this route's checks.
+      - Rate limit: 5 rapid submissions succeed, the 6th gets a real
+        `429` — proven with the actual configured value (5/10min),
+        not a raised test value. (The malicious-input battery above
+        needed more than 5 requests, so the limiter was temporarily
+        raised for that stretch and reverted — see the git history —
+        rather than fighting the real limit mid-test.)
+      - Duplicate protection: the same phone + same course submitted
+        3 times rapidly — all 3 report success, but only 1 record
+        exists. The same phone with a *different* course submitted
+        immediately after — a genuine 2nd record is created,
+        confirming the dedup key is phone+course, not phone alone.
+      - Form UI (real browser, not just the API): empty submit shows
+        the localized field error, sets `aria-invalid`, and moves
+        focus to the first invalid field; a valid submit replaces the
+        form with the localized success message and moves focus into
+        it. Course select is preselected correctly on a course page
+        and defaults to "general" on the homepage, in all 3 locales,
+        at 1440px and 390px, both with normal and forced reduced
+        motion — 12 + 12 combinations, zero console errors, zero
+        overflow.
 - [ ] **J — Admin-friendly lead management** in Payload.
 - [ ] **K — SEO**: per-locale metadata, hreflang, sitemap, robots,
       structured data.
 - [ ] **L — Accessibility / responsive / performance pass**.
 - [ ] **M — Production build + deployment readiness**.
 - [ ] **N — Architecture prep for WhatsApp Cloud API + AI enrollment
-      agent** (no implementation required now, just clean seams).
+      agent** (no implementation required now, just clean seams). The
+      conversion path this prepares for is lead → WhatsApp handoff/
+      follow-up → staff/AI conversation → consultation/visit → admin
+      manually confirms enrollment — payment stays off-platform the
+      whole way through (see the no-web-payment decision above); this
+      milestone is about conversation handoff, not a checkout flow.
 
 ## Open business-info items (not blocking engineering work)
 

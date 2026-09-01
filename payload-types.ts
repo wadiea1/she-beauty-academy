@@ -365,9 +365,9 @@ export interface Application {
    */
   consultationAt?: string | null;
   /**
-   * e.g. "homepage", "instagram", "referral".
+   * Where on the site this lead submitted the form.
    */
-  source?: string | null;
+  source?: ('homepage' | 'course_page') | null;
   name: string;
   phone: string;
   email?: string | null;

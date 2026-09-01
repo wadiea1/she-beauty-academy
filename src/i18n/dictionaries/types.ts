@@ -67,4 +67,42 @@ export interface Dictionary {
     // server-only dictionary from its Client Component — its 3 strings
     // are a small inline table in that file instead.
   }
+  // The reusable lead/consultation form (Milestone I) — separate from
+  // `course.apply*` above, which is the surrounding section's intro
+  // copy (eyebrow/heading/body), not the form itself. Field-level
+  // server validation errors are deliberately not surfaced verbatim
+  // here for fields the client already validates itself (name/phone/
+  // email/privacyConsent) — the client mirrors the server's rules for
+  // immediate, localized feedback there, falling back to
+  // `genericValidationError` only if a request the client itself
+  // would have blocked somehow reaches the server anyway. `courseSlug`
+  // is the one field the client genuinely *can't* pre-validate — the
+  // dropdown only ever offers real courses, but the server can still
+  // reject it (stale page, CMS content changed, a forged request), so
+  // `courseUnavailable` is shown whenever the server specifically
+  // reports that rejection.
+  applyForm: {
+    nameLabel: string
+    phoneLabel: string
+    emailLabel: string
+    emailOptionalNote: string
+    courseLabel: string
+    courseGeneralOption: string
+    messageLabel: string
+    messageOptionalNote: string
+    privacyConsentLabel: string
+    marketingConsentLabel: string
+    submittingLabel: string
+    successHeading: string
+    successBody: string
+    errorHeading: string
+    errorBody: string
+    tryAgain: string
+    nameError: string
+    phoneError: string
+    emailError: string
+    privacyConsentError: string
+    courseUnavailable: string
+    genericValidationError: string
+  }
 }

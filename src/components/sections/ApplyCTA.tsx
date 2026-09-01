@@ -5,20 +5,45 @@ import { Text } from '@/components/ui/Text'
 import { Eyebrow } from '@/components/ui/Eyebrow'
 import { Button } from '@/components/ui/Button'
 import { Reveal } from '@/components/motion/Reveal'
+import { ApplicationForm } from '@/components/apply/ApplicationForm'
 import { whatsappHref } from '@/lib/links'
+import type { Locale } from '@/i18n/config'
+import type { Dictionary } from '@/i18n/dictionaries/types'
 
 interface ApplyCTAProps {
   copy: { eyebrow: string; heading: string; body: string }
   ctaLabel: string
   whatsappLabel: string
   whatsappNumber: string | null
+  locale: Locale
+  courses: { slug: string; title: string }[]
+  /** Set on a course page — preselects that course in the form. */
+  preselectedCourseSlug?: string | null
+  applyFormDict: Dictionary['applyForm']
 }
 
-/** Reused as-is on course detail pages (Milestone H) — `copy` only
- * needs to structurally match `{ eyebrow, heading, body }`, so a
- * course page can pass its own contextual text without this component
- * knowing anything about Payload's Course type. */
-export function ApplyCTA({ copy, ctaLabel, whatsappLabel, whatsappNumber }: ApplyCTAProps) {
+/**
+ * Reused as-is on course detail pages (Milestone H) and now hosts the
+ * real lead form (Milestone I) — `copy` only needs to structurally
+ * match `{ eyebrow, heading, body }`, so a course page can pass its
+ * own contextual text without this component knowing anything about
+ * Payload's Course type.
+ *
+ * The section's former primary button (a self-referencing `#apply`
+ * placeholder, since no real submission flow existed) is now the form
+ * itself. WhatsApp stays as an independent, always-available
+ * alternative contact method below it — unrelated to form submission.
+ */
+export function ApplyCTA({
+  copy,
+  ctaLabel,
+  whatsappLabel,
+  whatsappNumber,
+  locale,
+  courses,
+  preselectedCourseSlug,
+  applyFormDict,
+}: ApplyCTAProps) {
   const whatsapp = whatsappHref(whatsappNumber)
 
   return (
@@ -39,30 +64,26 @@ export function ApplyCTA({ copy, ctaLabel, whatsappLabel, whatsappNumber }: Appl
             {copy.body}
           </Text>
         </Reveal>
+
         <Reveal delay={0.15}>
-          <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
-            {/* A same-page anchor, not a locale-prefixed path — this
-             * component is reused on course pages (Milestone H) too, and
-             * a `/${locale}#apply` href would navigate *away* to the
-             * homepage from anywhere else instead of staying put. There's
-             * no real application flow yet (Milestone I) — this is an
-             * honest placeholder, not a fabricated one. */}
-            <Button href="#apply" variant="inverse" size="lg">
-              {ctaLabel}
-            </Button>
-            {whatsapp && (
-              <Button
-                href={whatsapp}
-                target="_blank"
-                rel="noopener noreferrer"
-                variant="outline-inverse"
-                size="lg"
-              >
+          <ApplicationForm
+            locale={locale}
+            courses={courses}
+            preselectedCourseSlug={preselectedCourseSlug}
+            dict={applyFormDict}
+            submitLabel={ctaLabel}
+          />
+        </Reveal>
+
+        {whatsapp && (
+          <Reveal delay={0.2}>
+            <div className="mt-8">
+              <Button href={whatsapp} target="_blank" rel="noopener noreferrer" variant="outline-inverse" size="md">
                 {whatsappLabel}
               </Button>
-            )}
-          </div>
-        </Reveal>
+            </div>
+          </Reveal>
+        )}
       </Container>
     </Section>
   )
