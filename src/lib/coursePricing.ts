@@ -33,3 +33,27 @@ export function formatCoursePrice(
       return null
   }
 }
+
+/**
+ * Whether CoursePracticalInfo's price row will actually render for this
+ * pricing config — 'hidden' never shows one; 'onRequest' always shows
+ * the neutral message; the amount-based types need their required
+ * field(s) to be set. Kept in sync with formatCoursePrice's own null-vs-
+ * non-null logic (and, unlike it, doesn't need a startingFromLabel,
+ * since presence doesn't depend on label text) so the page's tone
+ * computation and the component's actual row list can never disagree
+ * about whether this row is present.
+ */
+export function courseHasPriceRow(pricing: CourseDetail['pricing']): boolean {
+  switch (pricing.type) {
+    case 'hidden':
+      return false
+    case 'onRequest':
+      return true
+    case 'exact':
+    case 'startingFrom':
+      return pricing.price != null
+    case 'range':
+      return pricing.priceRangeMin != null && pricing.priceRangeMax != null
+  }
+}

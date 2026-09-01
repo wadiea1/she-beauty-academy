@@ -192,6 +192,12 @@ export interface CourseDetail {
   duration: string | null
   scheduleInfo: string | null
   enrollmentState: Course['enrollmentState']
+  /** Whether this course actually awards a certification, and which
+   * one — a fact about the course, decided in Payload per-course, not
+   * inferred from the existence of approved wording for it. 'none' (the
+   * schema default) and a record predating this field are both treated
+   * identically by the presentation layer: no certification claim. */
+  certificationType: Course['certificationType']
   metaTitle: string | null
   metaDescription: string | null
 }
@@ -241,6 +247,10 @@ async function fetchCourseBySlug(locale: Locale, slug: string): Promise<CourseDe
     duration: doc.duration ?? null,
     scheduleInfo: doc.scheduleInfo ?? null,
     enrollmentState: doc.enrollmentState,
+    // `?? 'none'` covers both an explicit 'none' and a record saved
+    // before this field existed (undefined/null at the DB level) —
+    // both mean the same thing here: no confirmed certification claim.
+    certificationType: doc.certificationType ?? 'none',
     metaTitle: doc.metaTitle ?? null,
     metaDescription: doc.metaDescription ?? null,
   }

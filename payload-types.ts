@@ -272,6 +272,10 @@ export interface Course {
    */
   scheduleInfo?: string | null;
   enrollmentState: 'open' | 'closed' | 'comingSoon' | 'full';
+  /**
+   * Select a certification only when it is confirmed for this course. "No certification information" is the safe default — it hides the certification line on the course page rather than showing an unconfirmed claim.
+   */
+  certificationType?: ('none' | 'professionalDiploma') | null;
   metaTitle?: string | null;
   metaDescription?: string | null;
   updatedAt: string;
@@ -568,6 +572,7 @@ export interface CoursesSelect<T extends boolean = true> {
   duration?: T;
   scheduleInfo?: T;
   enrollmentState?: T;
+  certificationType?: T;
   metaTitle?: T;
   metaDescription?: T;
   updatedAt?: T;

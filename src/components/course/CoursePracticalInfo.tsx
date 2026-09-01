@@ -6,13 +6,18 @@ import { Rule } from '@/components/ui/Rule'
 import { Reveal } from '@/components/motion/Reveal'
 import { StaggerGroup } from '@/components/motion/StaggerGroup'
 import { StaggerItem } from '@/components/motion/StaggerItem'
-import { formatCoursePrice } from '@/lib/coursePricing'
+import { formatCoursePrice, courseHasPriceRow } from '@/lib/coursePricing'
 import type { CourseDetail } from '@/lib/payload/queries'
 
 interface CoursePracticalInfoProps {
   duration: string | null
   scheduleInfo: string | null
   pricing: CourseDetail['pricing']
+  /** A fact about the course, decided per-course in Payload — not
+   * inferred from the existence of approved wording. 'none' (the
+   * default, and what every current course has) hides the row
+   * entirely; only an explicit 'professionalDiploma' shows it. */
+  certificationType: CourseDetail['certificationType']
   heading: string
   durationLabel: string
   scheduleLabel: string
@@ -25,16 +30,20 @@ interface CoursePracticalInfoProps {
 }
 
 /**
- * Duration, schedule, and pricing are each independently optional and
- * omitted when unset — no "Duration: —" placeholder rows. Certification
- * always renders: it's the one approved, universal claim, true for
- * every course regardless of what's been entered in Payload yet, so
- * this block is never left with nothing to say.
+ * Duration, schedule, pricing, and certification are each independently
+ * optional and omitted when unset/'none' — no "Duration: —" rows, no
+ * certification claim without a confirmed certificationType. Renders
+ * nothing at all if every row would be empty (possible once pricing
+ * can be 'hidden' with no duration/schedule/certification set either —
+ * not the case for any of the 3 real courses today, all 'onRequest',
+ * but the section must still degrade gracefully rather than show a
+ * bare heading).
  */
 export function CoursePracticalInfo({
   duration,
   scheduleInfo,
   pricing,
+  certificationType,
   heading,
   durationLabel,
   scheduleLabel,
@@ -47,14 +56,17 @@ export function CoursePracticalInfo({
 }: CoursePracticalInfoProps) {
   const formattedPrice = formatCoursePrice(pricing, pricingStartingFrom)
   const priceValue = formattedPrice ?? (pricing.type === 'onRequest' ? pricingOnRequest : null)
-  const showPriceRow = pricing.type !== 'hidden' && priceValue !== null
+  const showPriceRow = courseHasPriceRow(pricing)
+  const showCertificationRow = certificationType === 'professionalDiploma'
 
   const rows: { label: string; value: string }[] = [
     ...(duration ? [{ label: durationLabel, value: duration }] : []),
     ...(scheduleInfo ? [{ label: scheduleLabel, value: scheduleInfo }] : []),
     ...(showPriceRow && priceValue ? [{ label: priceLabel, value: priceValue }] : []),
-    { label: certificationLabel, value: certificationText },
+    ...(showCertificationRow ? [{ label: certificationLabel, value: certificationText }] : []),
   ]
+
+  if (rows.length === 0) return null
 
   return (
     <Section tone={tone} spacing="md">

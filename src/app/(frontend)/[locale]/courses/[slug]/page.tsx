@@ -16,6 +16,7 @@ import { CourseGallery } from '@/components/course/CourseGallery'
 import { CoursePracticalInfo } from '@/components/course/CoursePracticalInfo'
 import { FAQSection } from '@/components/sections/FAQSection'
 import { ApplyCTA } from '@/components/sections/ApplyCTA'
+import { courseHasPriceRow } from '@/lib/coursePricing'
 
 export async function generateMetadata({
   params,
@@ -62,6 +63,15 @@ function computeSectionTones(course: CourseDetail, hasFaq: boolean) {
   const hasOutcomes = course.outcomes.length > 0
   const hasCurriculum = course.curriculum.length > 0
   const hasGallery = course.gallery.length > 0
+  // Mirrors CoursePracticalInfo's own "any row to show" check — kept in
+  // sync via the same courseHasPriceRow helper, so the tone computed
+  // here and the component's actual decision to render (or return
+  // null) can never disagree.
+  const hasPracticalInfo =
+    Boolean(course.duration) ||
+    Boolean(course.scheduleInfo) ||
+    courseHasPriceRow(course.pricing) ||
+    course.certificationType === 'professionalDiploma'
 
   let toggle: 'porcelain' | 'shell' = 'shell'
   const next = () => {
@@ -74,11 +84,11 @@ function computeSectionTones(course: CourseDetail, hasFaq: boolean) {
   const outcomes = hasOutcomes ? next() : undefined
   const curriculum = hasCurriculum ? next() : undefined
   const gallery = hasGallery ? next() : undefined
-  let practicalInfo = next()
-  // CoursePracticalInfo always renders; FAQSection (when present) has a
-  // fixed tone="shell" of its own, not parametrized like these — avoid
-  // handing it the same tone as the section immediately before it.
-  if (hasFaq && practicalInfo === 'shell') practicalInfo = 'porcelain'
+  let practicalInfo = hasPracticalInfo ? next() : undefined
+  // FAQSection (when present) has a fixed tone="shell" of its own, not
+  // parametrized like these — avoid handing PracticalInfo the same
+  // tone as the section immediately before it.
+  if (practicalInfo && hasFaq && practicalInfo === 'shell') practicalInfo = 'porcelain'
 
   return { overview, outcomes, curriculum, gallery, practicalInfo }
 }
@@ -170,20 +180,23 @@ export default async function CoursePage({ params }: PageProps<'/[locale]/course
         <CourseGallery images={course.gallery} heading={c.galleryHeading} tone={tones.gallery} />
       )}
 
-      <CoursePracticalInfo
-        duration={course.duration}
-        scheduleInfo={course.scheduleInfo}
-        pricing={course.pricing}
-        heading={c.practicalInfoHeading}
-        durationLabel={c.durationLabel}
-        scheduleLabel={c.scheduleLabel}
-        priceLabel={c.priceLabel}
-        certificationLabel={c.certificationLabel}
-        certificationText={c.certificationText}
-        pricingOnRequest={c.pricingOnRequest}
-        pricingStartingFrom={c.pricingStartingFrom}
-        tone={tones.practicalInfo}
-      />
+      {tones.practicalInfo && (
+        <CoursePracticalInfo
+          duration={course.duration}
+          scheduleInfo={course.scheduleInfo}
+          pricing={course.pricing}
+          certificationType={course.certificationType}
+          heading={c.practicalInfoHeading}
+          durationLabel={c.durationLabel}
+          scheduleLabel={c.scheduleLabel}
+          priceLabel={c.priceLabel}
+          certificationLabel={c.certificationLabel}
+          certificationText={c.certificationText}
+          pricingOnRequest={c.pricingOnRequest}
+          pricingStartingFrom={c.pricingStartingFrom}
+          tone={tones.practicalInfo}
+        />
+      )}
 
       {faqs.length > 0 && (
         <FAQSection copy={{ eyebrow: c.faqEyebrow, heading: c.faqHeading }} items={faqs} />

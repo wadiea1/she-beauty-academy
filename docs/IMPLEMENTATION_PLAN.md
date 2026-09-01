@@ -363,13 +363,33 @@ and status is this file plus `git log`.
       - `metaTitle`/`metaDescription` → `generateMetadata`, falling
         back to `SiteSettings.defaultSeo` and finally to a computed
         `title`/`shortDescription`-based default — never invented.
-      - **Certification wording is deliberately *not* a new Payload
-        field.** It's fixed, legally-considered policy language
-        ("Professional diploma upon successful completion") identical
-        across all 3 courses, not per-course editorial content — it
-        lives in the i18n dictionaries (like `nav.apply`), not the CMS,
-        matching AGENTS.md's existing "recurring interface convention
-        vs. per-context editorial content" distinction.
+      - `certificationType` (new field, see **Correction** below) →
+        the Certification row, only when explicitly set to
+        `professionalDiploma`.
+
+      **Correction**: an earlier version of this milestone treated
+      certification wording as fixed policy language that applies
+      identically to all 3 courses, and had `CoursePracticalInfo`
+      always render it. That conflated two different things — the
+      *safe wording to use if a course awards a diploma* (approved)
+      and *whether a given course actually does* (never established
+      for any of the 3 real courses). Corrected: `Courses.ts` gained a
+      non-localized `certificationType` select
+      (`none`/`professionalDiploma`, default `none`) — a fact about
+      the course, decided per-course in Payload, not inferred from the
+      existence of approved wording for it. The *localized wording*
+      for `professionalDiploma` still lives in the i18n dictionaries
+      (like `nav.apply`) — identical for every course that has one, so
+      it isn't duplicated as a translated field per course — but
+      *whether it applies at all* is CMS data, not an assumption. All
+      3 real courses are `none` today (the schema default); the
+      Certification row is correctly absent from every current course
+      page until academy staff explicitly confirm one. Verified live:
+      all 3 real courses show no certification claim; a temporary
+      `professionalDiploma` set on `cosmetics-1` (restored exactly
+      afterward) rendered the correct approved wording in all 3
+      locales; a disposable draft course with `professionalDiploma`
+      set still produced a 404 with no leak.
 
       **FAQs**: a new locale+course-scoped query
       (`getPublishedFAQsForCourse`) fetches only FAQs whose
