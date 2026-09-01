@@ -713,7 +713,105 @@ and status is this file plus `git log`.
         at 1440px and 390px, both with normal and forced reduced
         motion — 12 + 12 combinations, zero console errors, zero
         overflow.
-- [ ] **J — Admin-friendly lead management** in Payload.
+- [ ] **J — Admin-friendly lead management + RBAC** in Payload. Branch
+      `feat/admin-lead-management`. What happens *after* a lead reaches
+      Payload — staff review, contact, status, notes, eventual
+      outcome — not a new intake path (Milestone I already built that).
+      No payment functionality; the confirmed business flow stays
+      website → lead → WhatsApp/staff conversation → manual off-site
+      enrollment (see the no-web-payment decision above).
+
+      **Audit**: `Users` is `auth: true` with zero custom fields —
+      every collection/global's access control today is the same
+      pattern, `Boolean(req.user)` for create/update/delete: *any*
+      authenticated user has full access to everything. There is no
+      role differentiation anywhere yet — this milestone builds it
+      from scratch, not extends an existing one. Confirmed exactly one
+      real user exists (id 1, created before this milestone) — the
+      account this migration must preserve.
+
+      **RBAC model**: `Users` gains a required `role` select
+      (`admin`/`editor`/`advisor`), **default `advisor`** (least
+      privilege — never `admin`, so a newly created staff account
+      never accidentally gets full access). Central, typed helpers in
+      `src/collections/access/roles.ts` (`isAdmin`,
+      `isAdminOrEditor`, `isAdminOrAdvisor`, `isAuthenticated`, plus
+      field-level variants) — every collection/global's access
+      control calls these, not an inline `user.role === 'admin'`
+      scattered per file.
+
+      | | admin | editor | advisor |
+      |---|---|---|---|
+      | Applications read/update | ✓ | ✗ | ✓ |
+      | Applications create | ✓ | ✗ | ✓ (manually logging a lead) |
+      | Applications delete | ✓ | ✗ | ✗ |
+      | Courses/FAQs/Testimonials/Media/Homepage/Navigation/SiteSettings edit | ✓ | ✓ | ✗ (read-only) |
+      | Media delete | ✓ | ✗ | ✗ (more consequential — could break a live page still referencing it) |
+      | Users create/delete/change-role | ✓ | ✗ | ✗ |
+      | Users read, update own profile | ✓ | ✓ | ✓ |
+
+      **Role-escalation prevention**: the `role` field itself has
+      `field.access.update: isAdmin` — a non-admin updating their own
+      user document (self-service profile edits are otherwise
+      allowed) cannot change that one field even via a direct API
+      call with a forged `role` in the body, not just a hidden UI
+      control. Only `isAdmin` can `create` a `Users` document at all,
+      so a non-admin can't create a fresh admin account either.
+
+      **Existing admin preserved, explicitly, not by default**: the
+      schema push gives the existing user the field's `advisor`
+      default like any other row — a deliberate one-time migration
+      script (matching this project's established no-formal-migration
+      convention) then explicitly sets that specific account to
+      `admin` immediately after, verified by a real login test
+      afterward. Never relies on the default coinciding with the
+      right outcome.
+
+      **Field-integrity**: fields that are audit truth from the
+      original public submission — `source`, `privacyConsentAt`,
+      `privacyPolicyVersion`, `marketingConsentAt`, `preferredLanguage`
+      — get both `admin.readOnly: true` (so the UI doesn't casually
+      invite editing them, for every role including admin) *and*
+      `field.access.update: isAdmin` (so `readOnly` isn't the only
+      thing stopping a non-admin from changing them via a direct API
+      call — UI `readOnly` is presentation, not security). Genuine
+      workflow fields (`status`, `assignedTo`, `consultationAt`,
+      `internalNotes`, and the lead's own contact/interest details,
+      which staff may legitimately need to correct) stay fully
+      editable at the collection's normal `isAdminOrAdvisor` level.
+
+      **Applications admin layout**: `status`/`assignedTo`/
+      `consultationAt`/`source` (read-only) stay in the sidebar
+      (already there, and always visible regardless of which tab is
+      open — better for the fields staff checks most). `internalNotes`
+      moves to a prominent, always-visible position above the tabs
+      (used daily, shouldn't be one click away). The rest is grouped
+      into unnamed tabs — Contact (name/phone/email/preferredLanguage),
+      Interest (interestedCourse/message), Consent & Audit
+      (privacyConsentAt/privacyPolicyVersion/marketingConsent/
+      marketingConsentAt), Campaign tracking (the existing UTM fields,
+      now a tab instead of a collapsible). `defaultColumns`:
+      `createdAt`, `name`, `phone`, `interestedCourse`,
+      `preferredLanguage`, `source`, `status`, `assignedTo` — no
+      consent timestamps or technical IDs cluttering the list.
+      `assignedTo`'s relationship field gets `filterOptions: { role:
+      { in: ['admin', 'advisor'] } }` so the picker doesn't offer
+      assigning a lead to an editor — a UX guardrail, not the real
+      security boundary (that's still the collection's own access
+      control on `Applications`, unaffected by who's a valid
+      `assignedTo` value).
+
+      **Manual WhatsApp convenience — deferred**: a clickable "Open
+      WhatsApp" affordance next to a lead's phone number would need a
+      custom Payload admin `Cell` component (a real `'use client'`
+      component registered through the generated `importMap.js`, not
+      a plain field option) to render as a link rather than a text
+      input. Disproportionate scope for what this milestone is
+      actually about, and a broken custom component risks breaking
+      the entire Applications list view — a worse outcome than not
+      having the convenience. Deferred, not attempted; `wa.me/<phone>`
+      remains constructible by staff manually in the meantime. No
+      WhatsApp API, no automation, regardless.
 - [ ] **K — SEO**: per-locale metadata, hreflang, sitemap, robots,
       structured data.
 - [ ] **L — Accessibility / responsive / performance pass**.
