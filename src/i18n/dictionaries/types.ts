@@ -67,4 +67,35 @@ export interface Dictionary {
     // server-only dictionary from its Client Component — its 3 strings
     // are a small inline table in that file instead.
   }
+  // The reusable lead/consultation form (Milestone I) — separate from
+  // `course.apply*` above, which is the surrounding section's intro
+  // copy (eyebrow/heading/body), not the form itself. Field-level
+  // server validation errors are deliberately not surfaced verbatim
+  // here: the client mirrors the server's rules for immediate,
+  // localized feedback, and only falls back to `genericValidationError`
+  // if a request the client itself would have blocked somehow reaches
+  // the server anyway.
+  applyForm: {
+    nameLabel: string
+    phoneLabel: string
+    emailLabel: string
+    emailOptionalNote: string
+    courseLabel: string
+    courseGeneralOption: string
+    messageLabel: string
+    messageOptionalNote: string
+    privacyConsentLabel: string
+    marketingConsentLabel: string
+    submittingLabel: string
+    successHeading: string
+    successBody: string
+    errorHeading: string
+    errorBody: string
+    tryAgain: string
+    nameError: string
+    phoneError: string
+    emailError: string
+    privacyConsentError: string
+    genericValidationError: string
+  }
 }
