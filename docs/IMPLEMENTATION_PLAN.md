@@ -70,6 +70,25 @@ and status is this file plus `git log`.
   models" commit for details): never thread the current request's `req`
   into a hook's own nested `findByID` call on the same document, it
   corrupts the outer write.
+- **No web payment — ever, by design, not a missing feature.** Confirmed
+  business decision: SHE Beauty Academy will not accept payments through
+  this website. The intended commercial flow is entirely off-platform:
+  website (lead/consultation form) → WhatsApp conversation with the
+  academy → staff discusses course, price, dates, questions → enrollment
+  and payment are handled manually/off-site by admin staff. Concretely,
+  this means the codebase must never grow: online checkout, Stripe,
+  PayPal, or any other payment-provider integration; credit-card
+  handling of any kind; cart/order/payment API routes; a payment/order
+  Payload collection or database model; a "Pay now" button; or storage of
+  any payment/card information. `Applications` (Milestone I) is the
+  entire commercial-conversion data model this site owns — a lead
+  record, nothing past it. The (not-yet-built) future flow is: lead
+  submitted → confirmation → WhatsApp handoff/follow-up → staff/AI
+  conversation (Milestone N) → consultation/visit → admin manually
+  confirms enrollment, all outside this codebase. If a future milestone
+  brief ever asks for checkout/payment on this site, that contradicts
+  this recorded decision and should be confirmed explicitly before
+  building anything, not assumed to supersede it silently.
 
 ## Milestones
 
@@ -451,8 +470,9 @@ and status is this file plus `git log`.
       privacy/marketing consent kept separate). Branch
       `feat/lead-engine`. This milestone is the secure intake only:
       visitor → validated submission → stored lead, visible to staff
-      in Payload. No WhatsApp/email sending, no AI, no scheduling, no
-      payment — those are later milestones.
+      in Payload. No WhatsApp/email sending, no AI, no scheduling —
+      those are later milestones. No payment — that's never coming to
+      this website at all; see the no-web-payment decision below.
 
       **Audit**: `Applications` (Milestone F) already anticipated this
       exact architecture — its own comment says the public form "will
@@ -678,7 +698,12 @@ and status is this file plus `git log`.
 - [ ] **L — Accessibility / responsive / performance pass**.
 - [ ] **M — Production build + deployment readiness**.
 - [ ] **N — Architecture prep for WhatsApp Cloud API + AI enrollment
-      agent** (no implementation required now, just clean seams).
+      agent** (no implementation required now, just clean seams). The
+      conversion path this prepares for is lead → WhatsApp handoff/
+      follow-up → staff/AI conversation → consultation/visit → admin
+      manually confirms enrollment — payment stays off-platform the
+      whole way through (see the no-web-payment decision above); this
+      milestone is about conversation handoff, not a checkout flow.
 
 ## Open business-info items (not blocking engineering work)
 
