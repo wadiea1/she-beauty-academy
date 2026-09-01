@@ -1196,21 +1196,76 @@ and status is this file plus `git log`.
       issues — fixed in the test tooling before trusting any result
       from it.)
 
-      **Responsive**: zero horizontal overflow confirmed at 492/744/
-      1000/1416px (device-pixel widths a Windows headless Edge window
-      actually renders at — see below) for the homepage and a course
-      page, in both directions (LTR/RTL). Narrower true-320/360px
-      testing was attempted but blocked by a real environment floor:
-      this session's headless Edge on Windows would not render below
-      roughly ~492px regardless of the requested `--window-size`
-      (confirmed with multiple explicit requests, including 320 and
-      500, both landing at the same 492px actual width) — documented
-      here rather than silently claimed as tested. This doesn't leave
-      sub-492px behavior unverified in practice, though: the design's
-      Tailwind config has no breakpoint between 0 and `sm:`(640px), so
-      492px already exercises the exact same single-column/mobile-nav
-      CSS path that 320px would — there is no additional narrower
-      breakpoint for anything to diverge at.
+      **Responsive**: **corrected during PR review.** The original
+      pass here reported a ~492px floor on headless Edge's
+      `--window-size` launch flag and treated that as a stand-in for
+      320/360px, reasoning that no breakpoint exists below `sm:`
+      (640px) in this design so the two would behave identically.
+      That reasoning doesn't hold in general — a narrower viewport can
+      still surface intrinsic/min-content overflow, long localized
+      words, or flex/grid sizing pressure even within the same media-
+      query bucket — and it also turned out to rest on a false
+      premise: the ~492px "floor" was never a real platform limit.
+      Re-investigated and found the actual cause: this session's
+      earlier screenshot scripts constructed the tab-creation URL from
+      a CLI argument, and Git Bash's MSYS path-conversion silently
+      mangled a leading `/` argument into a bogus Windows path before
+      node ever saw it — so the *navigation itself* was failing
+      silently, not `Emulation.setDeviceMetricsOverride`. That API
+      works correctly once the URL bug is out of the picture.
+
+      Redone with genuine `Emulation.setDeviceMetricsOverride`
+      (`width`/`height`, `deviceScaleFactor: 1`, `mobile: false`) on a
+      normally-launched browser (no fixed `--window-size`), with
+      `window.innerWidth` read back and confirmed equal to the
+      requested value before trusting any other measurement — 320 and
+      360px both verified genuine (`innerWidth: 320`/`360`,
+      `clientWidth: 305`/`345` after the scrollbar). 30 checks across
+      the full requested matrix: `/ar`, `/he`, `/en` homepage at both
+      320 and 360px, plus a representative course page (`cosmetics-1`)
+      in all 3 locales at 320px — `documentElement.scrollWidth <=
+      clientWidth` on every one, **and** a stricter per-element check
+      (every element's own bounding rect against the viewport edge,
+      not just the document root) found zero real offenders. The
+      element-level check's first run did flag the application form's
+      intentionally off-screen honeypot field (positioned at
+      `left: -9999px` on purpose — see `ApplicationForm.tsx`) as a
+      false positive; excluded via its own `aria-hidden="true"`
+      wrapper once recognized, not a real defect. Visually inspected
+      via real screenshots at true 320px (hero, nav, course cards,
+      the full application form and consent checkboxes, FAQ, footer,
+      and the Arabic course page's breadcrumb/RTL layout end to end)
+      — everything wraps and stacks cleanly, nothing clipped.
+
+      The mobile drawer was also re-tested at a genuinely emulated
+      320px specifically (the milestone's own real accessibility bug
+      was here, so this was worth re-confirming at the actual target
+      width, not inferred from a wider one): opens correctly, zero
+      overflow while open, first focus lands on the close button,
+      `header`/`main`/`footer` all `inert`, Tab-cycling through all 9
+      focusable elements never escapes the dialog, Shift+Tab from the
+      first element wraps backward and stays inside, Escape closes it,
+      and focus returns to the toggle button afterward — all confirmed
+      at true 320px, not assumed from the 1440px result.
+
+      No responsive defect was found at true 320/360px — no code
+      change was necessary, only this corrected verification record.
+
+      **`enrollmentState: 'unspecified'` public-behavior sanity
+      check** (re-confirmed while doing this correction, precisely):
+      `CourseHero.tsx` only renders a status-badge `<Text>` as a
+      sibling of the "#apply" CTA link when `statusBadge` is non-null,
+      and the course page's `statusBadge` computation treats
+      `'unspecified'` exactly like `'open'` — null either way. Checked
+      structurally (not fuzzy text matching, which would also catch
+      the header's own unrelated "Open menu" button): on all 3 real
+      courses' pages, the CTA's sibling group contains exactly the one
+      link and nothing else — no "Open"/"Enrollment open"/"Enroll
+      now" badge, message, or state is ever derived from
+      `'unspecified'`. The consultation CTA itself is of course still
+      present and available, as intended — that's a lead action, not
+      an enrollment-open claim. No schema or component change was
+      needed; this already behaved correctly.
 
       **Reduced motion**: reconfirmed via CDP `prefers-reduced-motion:
       reduce` emulation (the same forced-preference methodology as
