@@ -195,8 +195,20 @@ export const Courses: CollectionConfig = {
               name: 'enrollmentState',
               type: 'select',
               required: true,
-              defaultValue: 'open',
+              // 'unspecified' is the safe default — not "Open". A prior
+              // version defaulted this to 'open', which every course
+              // record then carried simply because nothing overrode the
+              // schema default, never because enrollment was actually
+              // confirmed open. The public course page treats
+              // 'unspecified' exactly like 'open' (no badge shown —
+              // see courses/[slug]/page.tsx) so this never surfaces as
+              // a visible "TBD" claim either; it only prevents an
+              // unconfirmed "Open" from being asserted by default.
+              // Set this to 'open' only once enrollment is genuinely,
+              // deliberately confirmed open.
+              defaultValue: 'unspecified',
               options: [
+                { label: 'Not yet specified (safe default — shows no badge)', value: 'unspecified' },
                 { label: 'Open', value: 'open' },
                 { label: 'Closed', value: 'closed' },
                 { label: 'Coming soon', value: 'comingSoon' },

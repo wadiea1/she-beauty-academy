@@ -155,14 +155,17 @@ export default async function CoursePage({ params }: PageProps<'/[locale]/course
   const tones = computeSectionTones(course, faqs.length > 0)
 
   const c = dict.course
+  // 'unspecified' (the safe default — see Courses.ts) shows no badge,
+  // same as 'open': neither asserts a claim to the visitor either
+  // way. Only a deliberately-set closed/comingSoon/full shows one.
   const statusBadge =
-    course.enrollmentState === 'open'
-      ? null
-      : course.enrollmentState === 'closed'
-        ? c.enrollmentClosed
-        : course.enrollmentState === 'comingSoon'
-          ? c.enrollmentComingSoon
-          : c.enrollmentFull
+    course.enrollmentState === 'closed'
+      ? c.enrollmentClosed
+      : course.enrollmentState === 'comingSoon'
+        ? c.enrollmentComingSoon
+        : course.enrollmentState === 'full'
+          ? c.enrollmentFull
+          : null
 
   const courseUrl = absoluteUrl(`/${locale}/courses/${slug}`)
   const courseJsonLd = {

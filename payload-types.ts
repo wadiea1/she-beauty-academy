@@ -277,7 +277,7 @@ export interface Course {
    * Freeform schedule details, once finalized.
    */
   scheduleInfo?: string | null;
-  enrollmentState: 'open' | 'closed' | 'comingSoon' | 'full';
+  enrollmentState: 'unspecified' | 'open' | 'closed' | 'comingSoon' | 'full';
   /**
    * Select a certification only when it is confirmed for this course. "No certification information" is the safe default — it hides the certification line on the course page rather than showing an unconfirmed claim.
    */
