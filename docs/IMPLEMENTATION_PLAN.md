@@ -906,7 +906,7 @@ and status is this file plus `git log`.
       boundaries from Milestones H/I are unaffected by this
       milestone's access-control changes. No web-payment
       functionality was touched or added.
-- [ ] **K — Production SEO + discoverability**. Branch `feat/seo`.
+- [x] **K — Production SEO + discoverability**. Branch `feat/seo`.
       Technical SEO layer for the existing site — no new marketing
       content or invented business claims.
 
@@ -1078,7 +1078,47 @@ and status is this file plus `git log`.
       admin Applications boundaries from Milestone J untouched, real
       admin still `role: admin`. No web-payment functionality
       introduced. `PAYLOAD_SECRET`/`DATABASE_URI` confirmed absent
-      from every metadata/sitemap/JSON-LD output.
+      from every metadata/sitemap/JSON-LD output. All of the above
+      became one 75-check automated regression suite run against the
+      real dev server before opening the PR (robots.txt in both
+      states, sitemap URL count/contents, all 3 homepage locales'
+      full `<head>`, all 9 course URLs' self-canonical + JSON-LD, the
+      invalid-slug 404's exact head output, the public lead/RBAC
+      regression, and the secret-leakage checks) — 0 failures on the
+      final run.
+
+      **Two real implementation bugs, found by that same testing and
+      fixed before opening the PR** — this section originally
+      described the intended design; both are corrected here to match
+      what's actually in the code:
+
+      1. The original plan put the homepage's own
+         canonical/alternates/robots default directly in
+         `[locale]/layout.tsx`, reasoning that the homepage's
+         `page.tsx` had no metadata of its own to inherit them.
+         Verified live that this was wrong: Next's `not-found.tsx`
+         boundary does **not** inherit the failing route's own
+         `page.tsx` `generateMetadata` — only its ancestor layouts'.
+         An invalid course slug's 404 page therefore emitted `<link
+         rel="canonical" href=".../ar">` (the Arabic homepage) plus a
+         duplicate `<meta name="robots" content="index, follow">`
+         sitting alongside Next's own auto-injected `noindex` for the
+         404 response. Fixed by moving everything route-specific
+         (canonical, alternates, openGraph, twitter, robots) out of
+         the layout entirely and into each real page's own
+         `generateMetadata` (`[locale]/page.tsx` for the homepage,
+         `courses/[slug]/page.tsx` for course pages) — a 404 boundary
+         now has nothing positive to inherit from any ancestor.
+      2. While fixing the above, the homepage's `generateMetadata`
+         conditionally set `title: siteSettings.defaultSeo.metaTitle
+         ? {...} : undefined`. `title: undefined` is not the same as
+         omitting the `title` key — the key's mere presence (even
+         with an `undefined` value) suppressed the layout's
+         `title.default` inheritance entirely, producing a homepage
+         with no `<title>` element at all. Fixed by conditionally
+         spreading the key in (`...(condition ? { title: {...} } :
+         {})`) so it's genuinely absent, not present-but-empty, when
+         there's no CMS override.
 - [ ] **L — Accessibility / responsive / performance pass**.
 - [ ] **M — Production build + deployment readiness**.
 - [ ] **N — Architecture prep for WhatsApp Cloud API + AI enrollment
