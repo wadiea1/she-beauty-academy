@@ -6,18 +6,19 @@ import { Eyebrow } from '@/components/ui/Eyebrow'
 import { Button } from '@/components/ui/Button'
 import { Reveal } from '@/components/motion/Reveal'
 import { whatsappHref } from '@/lib/links'
-import type { HomepageContent } from '@/lib/payload/queries'
-import type { Locale } from '@/i18n/config'
 
 interface ApplyCTAProps {
-  copy: HomepageContent['apply']
+  copy: { eyebrow: string; heading: string; body: string }
   ctaLabel: string
   whatsappLabel: string
   whatsappNumber: string | null
-  locale: Locale
 }
 
-export function ApplyCTA({ copy, ctaLabel, whatsappLabel, whatsappNumber, locale }: ApplyCTAProps) {
+/** Reused as-is on course detail pages (Milestone H) — `copy` only
+ * needs to structurally match `{ eyebrow, heading, body }`, so a
+ * course page can pass its own contextual text without this component
+ * knowing anything about Payload's Course type. */
+export function ApplyCTA({ copy, ctaLabel, whatsappLabel, whatsappNumber }: ApplyCTAProps) {
   const whatsapp = whatsappHref(whatsappNumber)
 
   return (
@@ -40,7 +41,13 @@ export function ApplyCTA({ copy, ctaLabel, whatsappLabel, whatsappNumber, locale
         </Reveal>
         <Reveal delay={0.15}>
           <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
-            <Button href={`/${locale}#apply`} variant="inverse" size="lg">
+            {/* A same-page anchor, not a locale-prefixed path — this
+             * component is reused on course pages (Milestone H) too, and
+             * a `/${locale}#apply` href would navigate *away* to the
+             * homepage from anywhere else instead of staying put. There's
+             * no real application flow yet (Milestone I) — this is an
+             * honest placeholder, not a fabricated one. */}
+            <Button href="#apply" variant="inverse" size="lg">
               {ctaLabel}
             </Button>
             {whatsapp && (

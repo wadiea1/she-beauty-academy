@@ -202,6 +202,25 @@ export const Courses: CollectionConfig = {
                 { label: 'Full', value: 'full' },
               ],
             },
+            {
+              name: 'certificationType',
+              type: 'select',
+              // Not localized: this is a fact about the course (does it
+              // award a diploma at all?), not editorial copy — the
+              // localized wording for 'professionalDiploma' lives in the
+              // i18n dictionaries (course.certificationText), identical
+              // for every course that has one, so it isn't duplicated
+              // as a translated field per course.
+              defaultValue: 'none',
+              options: [
+                { label: 'No certification information', value: 'none' },
+                { label: 'Professional diploma', value: 'professionalDiploma' },
+              ],
+              admin: {
+                description:
+                  'Select a certification only when it is confirmed for this course. "No certification information" is the safe default — it hides the certification line on the course page rather than showing an unconfirmed claim.',
+              },
+            },
           ],
         },
         {

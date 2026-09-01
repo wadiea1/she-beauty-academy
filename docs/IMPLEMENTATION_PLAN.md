@@ -317,7 +317,136 @@ and status is this file plus `git log`.
       dash-flag never reaches it; verified by testing both forms
       directly) explicitly overwrites. Testimonials and Users/admin are
       never touched either way.
-- [ ] **H — Course listing/detail pages**.
+- [ ] **H — Course detail pages**. Branch `feat/course-pages`.
+
+      **Audit** (before writing any code): the `Courses` collection
+      (Milestone F) already models nearly everything a detail page
+      needs — `title`, `shortDescription`, `description`, `heroImage`,
+      `gallery`, `audience`, `ctaLabel`, `curriculum[]`, `outcomes[]`,
+      `pricingType`/`price`/`priceRangeMin`/`priceRangeMax`/`currency`,
+      `duration`, `scheduleInfo`, `enrollmentState`,
+      `metaTitle`/`metaDescription`, non-localized `slug`. **No schema
+      changes made** — everything genuinely needed already exists;
+      adding fields "because a detail page needs content" would be
+      over-modeling. The 3 real courses (`cosmetics-1`, `cosmetics-2`,
+      `branding-ai-beauty`) currently have only `title`/
+      `shortDescription` seeded (from `src/seed/content.json`) plus
+      `pricingType: 'onRequest'`/`enrollmentState: 'open'` defaults —
+      every other field (description, curriculum, outcomes, audience,
+      duration, schedule, media, SEO) is empty. The detail page design
+      must render correctly with almost everything absent, today.
+
+      **Content mapping**:
+      - `title` → H1. `shortDescription` → hero lead.
+      - `description` → an "Overview" block, only when non-empty.
+      - `heroImage` → hero `ImageFrame` (its existing placeholder
+        handles absence — unchanged).
+      - `gallery` → an image grid, only when the array is non-empty.
+      - `audience` → a "Who this is for" block, only when non-empty.
+      - `curriculum[]` → a "Curriculum" list, only when non-empty.
+      - `outcomes[]` → a "What you'll learn" list, only when non-empty.
+      - `pricingType` + price fields → a Pricing block: `onRequest`
+        (the default for all 3 today) shows a neutral CTA-oriented
+        message, never a placeholder number; `exact`/`startingFrom`/
+        `range` format the real value when present; `hidden` omits the
+        block entirely.
+      - `duration`/`scheduleInfo` → a "Practical information" block,
+        each line only when its field is non-empty; the whole block
+        omitted if both are empty.
+      - `enrollmentState` → a small status indicator next to the CTA
+        (open/closed/comingSoon/full — new dictionary strings, since
+        this is fixed interface vocabulary, not per-course editorial
+        content).
+      - `ctaLabel` → overrides the site-wide "Book a Consultation"
+        label when set, exactly like the homepage `CourseCard` already
+        does.
+      - `metaTitle`/`metaDescription` → `generateMetadata`, falling
+        back to `SiteSettings.defaultSeo` and finally to a computed
+        `title`/`shortDescription`-based default — never invented.
+      - `certificationType` (new field, see **Correction** below) →
+        the Certification row, only when explicitly set to
+        `professionalDiploma`.
+
+      **Correction**: an earlier version of this milestone treated
+      certification wording as fixed policy language that applies
+      identically to all 3 courses, and had `CoursePracticalInfo`
+      always render it. That conflated two different things — the
+      *safe wording to use if a course awards a diploma* (approved)
+      and *whether a given course actually does* (never established
+      for any of the 3 real courses). Corrected: `Courses.ts` gained a
+      non-localized `certificationType` select
+      (`none`/`professionalDiploma`, default `none`) — a fact about
+      the course, decided per-course in Payload, not inferred from the
+      existence of approved wording for it. The *localized wording*
+      for `professionalDiploma` still lives in the i18n dictionaries
+      (like `nav.apply`) — identical for every course that has one, so
+      it isn't duplicated as a translated field per course — but
+      *whether it applies at all* is CMS data, not an assumption. All
+      3 real courses are `none` today (the schema default); the
+      Certification row is correctly absent from every current course
+      page until academy staff explicitly confirm one. Verified live:
+      all 3 real courses show no certification claim; a temporary
+      `professionalDiploma` set on `cosmetics-1` (restored exactly
+      afterward) rendered the correct approved wording in all 3
+      locales; a disposable draft course with `professionalDiploma`
+      set still produced a 404 with no leak.
+
+      **FAQs**: a new locale+course-scoped query
+      (`getPublishedFAQsForCourse`) fetches only FAQs whose
+      `relatedCourse` matches this course, published-only. If none
+      exist for a course, the section is omitted entirely — the
+      homepage's general FAQs (no `relatedCourse`) are deliberately
+      *not* re-rendered on course pages, to avoid duplicating content
+      the visitor may have already seen.
+
+      **Breadcrumbs**: Home → Courses → [title]. "Courses" links to
+      `/${locale}#courses` (the homepage's existing courses section) —
+      no new `/courses` listing route. A listing route wasn't built:
+      with only 3 courses, all 3 already appear together on the
+      homepage's Courses section, which *is* the listing; a second,
+      separate listing page would duplicate that without adding
+      information architecture value at this content volume.
+
+      **Routing**: `src/app/(frontend)/[locale]/courses/[slug]/
+      page.tsx`, nested under the existing `[locale]` layout (Nav/
+      Footer/skip-link inherited for free). No `generateStaticParams` —
+      same reasoning as the homepage (Milestone G): CMS-driven content,
+      staff expect a publish to go live without a redeploy. Same
+      60-second `unstable_cache` data-caching model, not full-page ISR.
+
+      **Cache-key correctness, verified against source (not assumed)**:
+      confirmed in `node_modules/next/dist/server/web/spec-extension/
+      unstable-cache.js` — `unstable_cache` builds its cache key as
+      `` `${fixedKey}-${JSON.stringify(args)}` ``, i.e. the *runtime
+      arguments* passed to the wrapped function at call time are
+      automatically part of the cache key, not just the static
+      `keyParts` array. Calling `getPublishedCourseBySlug('en',
+      'cosmetics-1')` and `getPublishedCourseBySlug('ar',
+      'cosmetics-2')` therefore land in genuinely different cache
+      entries with no extra work — re-verified live (see PR) rather
+      than trusting the source read alone.
+
+      **404 / draft privacy**: an unknown slug or a slug whose course
+      is not `published` calls `notFound()` — same pattern already
+      used for an invalid `locale` segment. The query never passes
+      `draft: true` and always `overrideAccess: false`, so this is the
+      same published-only boundary hardened in Milestone F, not a new
+      access path.
+
+      **JSON-LD**: `Course` schema.org data is emitted only from facts
+      that are actually known and true today — `name`, `description`,
+      `provider` (`{ "@type": "Organization", "name": "SHE Beauty
+      Academy" }`), `inLanguage`, and `image` when a `heroImage` is
+      set. No `offers`/pricing, `hasCourseInstance`/duration or dates,
+      or `aggregateRating` — none of that is confirmed for any course
+      yet, and schema.org permits omitting unsupported properties
+      rather than inventing them.
+
+      **No production domain exists yet** (verified: no
+      `NEXT_PUBLIC_SITE_URL`/`metadataBase` or equivalent anywhere in
+      the codebase) — canonical/hreflang alternates use relative paths
+      rather than a fabricated absolute domain; revisit once a real
+      domain is set (Milestone M).
 - [ ] **I — Lead/application flow** (Zod validation, spam protection,
       privacy/marketing consent kept separate).
 - [ ] **J — Admin-friendly lead management** in Payload.
