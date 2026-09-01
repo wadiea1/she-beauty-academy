@@ -1,5 +1,6 @@
 import path from 'node:path'
 import type { CollectionConfig } from 'payload'
+import { isAdmin, isAdminOrEditor } from './access/roles'
 
 /**
  * Real photography drops in here once the shoot from
@@ -21,9 +22,12 @@ export const Media: CollectionConfig = {
   },
   access: {
     read: () => true,
-    create: ({ req }) => Boolean(req.user),
-    update: ({ req }) => Boolean(req.user),
-    delete: ({ req }) => Boolean(req.user),
+    create: isAdminOrEditor,
+    update: isAdminOrEditor,
+    // Deleting a media file can break anything referencing it
+    // elsewhere in the CMS — more consequential than uploading or
+    // editing metadata, so admin only.
+    delete: isAdmin,
   },
   fields: [
     {

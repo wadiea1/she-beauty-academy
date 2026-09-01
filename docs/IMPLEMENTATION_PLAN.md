@@ -713,7 +713,199 @@ and status is this file plus `git log`.
         at 1440px and 390px, both with normal and forced reduced
         motion — 12 + 12 combinations, zero console errors, zero
         overflow.
-- [ ] **J — Admin-friendly lead management** in Payload.
+- [x] **J — Admin-friendly lead management + RBAC** in Payload. Branch
+      `feat/admin-lead-management`. What happens *after* a lead reaches
+      Payload — staff review, contact, status, notes, eventual
+      outcome — not a new intake path (Milestone I already built that).
+      No payment functionality; the confirmed business flow stays
+      website → lead → WhatsApp/staff conversation → manual off-site
+      enrollment (see the no-web-payment decision above).
+
+      **Audit**: `Users` is `auth: true` with zero custom fields —
+      every collection/global's access control today is the same
+      pattern, `Boolean(req.user)` for create/update/delete: *any*
+      authenticated user has full access to everything. There is no
+      role differentiation anywhere yet — this milestone builds it
+      from scratch, not extends an existing one. Confirmed exactly one
+      real user exists (id 1, created before this milestone) — the
+      account this migration must preserve.
+
+      **RBAC model**: `Users` gains a required `role` select
+      (`admin`/`editor`/`advisor`), **default `advisor`** (least
+      privilege — never `admin`, so a newly created staff account
+      never accidentally gets full access). Central, typed helpers in
+      `src/collections/access/roles.ts` (`isAdmin`,
+      `isAdminOrEditor`, `isAdminOrAdvisor`, `isAuthenticated`, plus
+      field-level variants) — every collection/global's access
+      control calls these, not an inline `user.role === 'admin'`
+      scattered per file.
+
+      | | admin | editor | advisor |
+      |---|---|---|---|
+      | Applications read/update | ✓ | ✗ | ✓ |
+      | Applications create | ✓ | ✗ | ✗ |
+      | Applications delete | ✓ | ✗ | ✗ |
+      | Courses/FAQs/Testimonials/Media/Homepage/Navigation/SiteSettings edit | ✓ | ✓ | ✗ (read-only) |
+      | Media delete | ✓ | ✗ | ✗ (more consequential — could break a live page still referencing it) |
+      | Users create/delete/change-role | ✓ | ✗ | ✗ |
+      | Users read, update own profile | ✓ | ✓ | ✓ |
+
+      **Applications `create` is admin-only, not admin/advisor**
+      (corrected during PR review — an earlier draft of this milestone
+      gave advisor `create` too). The one legitimate write path into
+      this collection is the public `/api/apply` route: it validates
+      the submission server-side and writes via the Local API with
+      `overrideAccess: true`, which never touches this collection's
+      own access control at all — so advisor doesn't need `create`
+      for the real intake flow to keep working. Advisor `create` would
+      also have been able to set the audit-truth fields below (source,
+      privacyConsentAt, …) to arbitrary values at creation time even
+      though those same fields are locked against advisor on update —
+      field-level `access.update` has no say over a document's initial
+      values, so `create` access is what actually has to be
+      restrictive for those fields to mean anything. Verified: advisor
+      `POST /api/applications` now returns 403; admin `POST
+      /api/applications` still succeeds (used for manually logging a
+      lead who called in, say); `/api/apply` still returns 200 and
+      creates a correctly-populated record.
+
+      **Role-escalation prevention**: the `role` field itself has
+      `field.access.update: isAdmin` — a non-admin updating their own
+      user document (self-service profile edits are otherwise
+      allowed) cannot change that one field even via a direct API
+      call with a forged `role` in the body, not just a hidden UI
+      control. Only `isAdmin` can `create` a `Users` document at all,
+      so a non-admin can't create a fresh admin account either.
+
+      **Existing admin preserved, explicitly, not by default**: the
+      schema push gives the existing user the field's `advisor`
+      default like any other row — a deliberate one-time migration
+      script (matching this project's established no-formal-migration
+      convention) then explicitly sets that specific account to
+      `admin` immediately after, verified by a real login test
+      afterward. Never relies on the default coinciding with the
+      right outcome.
+
+      **Field-integrity**: fields that are audit truth from the
+      original public submission — `source`, `privacyConsentAt`,
+      `privacyPolicyVersion`, `marketingConsentAt`, `preferredLanguage`
+      — get both `admin.readOnly: true` (so the UI doesn't casually
+      invite editing them, for every role including admin) *and*
+      `field.access.update: isAdmin` (so `readOnly` isn't the only
+      thing stopping a non-admin from changing them via a direct API
+      call — UI `readOnly` is presentation, not security). Genuine
+      workflow fields (`status`, `assignedTo`, `consultationAt`,
+      `internalNotes`, and the lead's own contact/interest details,
+      which staff may legitimately need to correct) stay fully
+      editable at the collection's normal `isAdminOrAdvisor` level.
+
+      **Applications admin layout**: `status`/`assignedTo`/
+      `consultationAt`/`source` (read-only) stay in the sidebar
+      (already there, and always visible regardless of which tab is
+      open — better for the fields staff checks most). `internalNotes`
+      moves to a prominent, always-visible position above the tabs
+      (used daily, shouldn't be one click away). The rest is grouped
+      into unnamed tabs — Contact (name/phone/email/preferredLanguage),
+      Interest (interestedCourse/message), Consent & Audit
+      (privacyConsentAt/privacyPolicyVersion/marketingConsent/
+      marketingConsentAt), Campaign tracking (the existing UTM fields,
+      now a tab instead of a collapsible). `defaultColumns`:
+      `createdAt`, `name`, `phone`, `interestedCourse`,
+      `preferredLanguage`, `source`, `status`, `assignedTo` — no
+      consent timestamps or technical IDs cluttering the list.
+      `assignedTo`'s relationship field gets `filterOptions: { role:
+      { in: ['admin', 'advisor'] } }` so the picker doesn't offer
+      assigning a lead to an editor — a UX guardrail, not the real
+      security boundary (that's still the collection's own access
+      control on `Applications`, unaffected by who's a valid
+      `assignedTo` value).
+
+      **Manual WhatsApp convenience — attempted, then reverted and
+      deferred** (corrected during PR review). A first pass built a
+      `'use client'` custom field component that stripped `phone` down
+      to digits and linked to `wa.me/<digits>`. That's unsafe: `phone`
+      is freeform text with no confirmed country-code convention (the
+      lead form intentionally doesn't rewrite what a visitor enters),
+      so a lead saved in local format (e.g. "050…") produces a wrong
+      or nonexistent wa.me destination — the earlier browser test only
+      proved the link was present in the DOM, not that it pointed
+      anywhere real. Removed entirely rather than shipped half-safe:
+      `src/components/admin/WhatsAppLink.tsx` deleted, its
+      registration on the `phone` field removed, `@payloadcms/ui`
+      dropped again as a direct dependency (nothing else in the
+      codebase used it), and the admin import map regenerated back to
+      its pre-Milestone-J state. A deliberate phone-number
+      normalization/country-code strategy is deferred to the later
+      WhatsApp architecture milestone (N) — no `libphonenumber`, no
+      hardcoded `+972` assumption, no Meta Cloud API/Twilio, just to
+      preserve a small convenience button. Business flow is
+      unaffected either way: staff see the lead's phone number in
+      Admin and open WhatsApp themselves.
+
+      **Verification — real Local/REST APIs, disposable QA accounts**
+      (never the real admin; all QA users/leads/test course deleted
+      afterward, confirmed by a final DB read showing only the one
+      real admin account and zero applications): 53 REST-API checks
+      covering the full admin/editor/advisor matrix on Applications,
+      Users, Courses, and the Homepage global — anonymous access
+      denied everywhere it must be; editor has zero Applications
+      access (403 on read/create); advisor can read/update
+      Applications but not create or delete (403 on both); the five
+      protected fields (`source`, `privacyConsentAt`,
+      `privacyPolicyVersion`, `marketingConsentAt`,
+      `preferredLanguage`) provably survive a same-request tamper
+      attempt from an advisor while `status` in the same request does
+      change — proving the protection is per-field, not a
+      whole-request rejection; a non-admin's attempt to set their own
+      `role` to `admin` returns 200 (self-update is otherwise allowed)
+      but the role demonstrably does not change; only an admin can
+      create Users or change another account's role; Courses read is
+      open to any staff role but write is admin/editor only, delete
+      admin-only for Media. All passed. Confirmed along the way (not
+      assumed): global updates in this Payload version go through
+      `POST /api/globals/:slug`, not `PATCH` — a `PATCH` returns
+      Payload's own 404, unrelated to access control; verified from
+      `node_modules/payload/dist/globals/endpoints/index.js`.
+
+      **Correction re-verification (Applications `create` fix)**: a
+      second, focused round of 29 REST-API checks against fresh
+      disposable QA accounts confirmed — anonymous, editor, *and now
+      advisor* `POST /api/applications` all return 403; admin `POST
+      /api/applications` still succeeds; `POST /api/apply` (the real
+      public path) still returns 200 and creates a record with
+      server-controlled `status`/`source`/`preferredLanguage`/
+      `privacyConsentAt`/`privacyPolicyVersion` all correct; an
+      invalid `courseSlug` still 400s with a field error; advisor can
+      still read Applications and update `status`/`internalNotes`/
+      `consultationAt`/`assignedTo` (assigning to a valid admin/
+      advisor account) while the same protected fields still silently
+      resist a same-request tamper attempt; advisor delete is still
+      403; role escalation is still blocked; the public site still
+      loads in all 3 locales. All 29 passed; every QA fixture
+      (accounts and applications created during the run) was deleted
+      immediately afterward.
+
+      Also verified in the real Payload Admin browser UI (headless
+      Edge via CDP, same methodology as prior milestones) as QA
+      editor and QA advisor accounts: the editor's sidebar has no
+      Applications/Leads entry at all, and visiting its URL directly
+      renders Payload's own 404 with no lead data in the DOM; the
+      advisor's sidebar does show Applications, the list/detail views
+      render correctly, a status-filtered list view surfaces the
+      right lead, the `assignedTo` field is present, and — genuinely
+      confirmed in the rendered DOM, not just via the REST API — the
+      protected `source` field renders as a disabled
+      `react-select--is-disabled` control for a non-admin.
+
+      Full public-site regression re-run after all of the above:
+      all 3 locales load, all 3 course detail pages load, an invalid
+      `courseSlug` on `/api/apply` still returns 400 with a
+      `fieldErrors.courseSlug`, and an anonymous `POST
+      /api/applications` (bypassing `/api/apply` entirely) still
+      returns 403 — the public lead-intake and draft-privacy
+      boundaries from Milestones H/I are unaffected by this
+      milestone's access-control changes. No web-payment
+      functionality was touched or added.
 - [ ] **K — SEO**: per-locale metadata, hreflang, sitemap, robots,
       structured data.
 - [ ] **L — Accessibility / responsive / performance pass**.

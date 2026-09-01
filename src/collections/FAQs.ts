@@ -1,5 +1,6 @@
 import type { CollectionConfig } from 'payload'
 import { requireAllLocalesToPublish } from './hooks/requireAllLocalesToPublish'
+import { isAdminOrEditor } from './access/roles'
 
 export const FAQs: CollectionConfig = {
   slug: 'faqs',
@@ -14,9 +15,9 @@ export const FAQs: CollectionConfig = {
       if (req.user) return true
       return { status: { equals: 'published' } }
     },
-    create: ({ req }) => Boolean(req.user),
-    update: ({ req }) => Boolean(req.user),
-    delete: ({ req }) => Boolean(req.user),
+    create: isAdminOrEditor,
+    update: isAdminOrEditor,
+    delete: isAdminOrEditor,
   },
   hooks: {
     beforeChange: [requireAllLocalesToPublish(['question', 'answer'])],

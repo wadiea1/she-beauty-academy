@@ -1,6 +1,7 @@
 import type { GlobalConfig } from 'payload'
 import { requireHomepageLocalesToPublish } from './hooks/requireHomepageLocalesToPublish'
 import { publishedOnlyAccess } from './publishedOnlyAccess'
+import { isAdminOrEditor } from '../collections/access/roles'
 
 /**
  * Homepage editorial content, one named tab per section — matching
@@ -34,8 +35,8 @@ export const Homepage: GlobalConfig = {
     read: publishedOnlyAccess,
     // Governs the separate version-history endpoints (admin's "Version
     // History" panel) — real, but not what stops a draft:true leak.
-    readVersions: ({ req }) => Boolean(req.user),
-    update: ({ req }) => Boolean(req.user),
+    readVersions: isAdminOrEditor,
+    update: isAdminOrEditor,
   },
   hooks: {
     beforeChange: [requireHomepageLocalesToPublish],

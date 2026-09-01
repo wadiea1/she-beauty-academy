@@ -1,5 +1,6 @@
 import type { CollectionConfig } from 'payload'
 import { locales, localeMeta } from '@/i18n/config'
+import { isAdmin, isAdminField, isAdminOrAdvisor } from './access/roles'
 
 const statusOptions = [
   // Main lifecycle
@@ -20,28 +21,73 @@ const statusOptions = [
 ]
 
 /**
- * Leads collected from the future public application form (Milestone I).
- * No public write path exists yet on purpose: the form will call the
- * Local API from a server Route Handler (with Zod validation and spam
- * protection) using `overrideAccess: true`, rather than writing through
- * this collection's own access control — so `create` staying staff-only
- * here is a real security boundary, not a placeholder to loosen later.
+ * Leads collected from the public application form (Milestone I),
+ * managed here by staff (Milestone J). No public write path exists on
+ * this collection itself on purpose: the form calls the Local API
+ * from a server Route Handler (Zod validation, spam protection) using
+ * `overrideAccess: true` — `create` staying staff-only here is a real
+ * security boundary, not a placeholder to loosen later.
+ *
+ * Access is admin/advisor only — editors get no access at all to
+ * leads, which is personal contact data outside their editorial
+ * remit. Advisors can read and update (work leads, change status,
+ * assign, add notes) but never create or delete.
+ *
+ * `create` is deliberately admin-only, NOT admin/advisor: the one
+ * legitimate write path into this collection is the public
+ * `/api/apply` route, which validates the submission server-side and
+ * writes via the Local API with `overrideAccess: true` — it never
+ * goes through this collection's own access control at all, so
+ * advisor doesn't need `create` for the real flow to keep working.
+ * Leaving `create` open to advisor would also have let an advisor
+ * set the audit-truth fields below (source, privacyConsentAt, …) to
+ * arbitrary values at creation time even though those same fields are
+ * locked against them on update — an asymmetry with no legitimate use
+ * that would have undermined the field-integrity protections that
+ * `create` bypasses by definition (field-level `access.update` has no
+ * say over the initial values a document is created with).
+ *
+ * Field integrity: a handful of fields record facts about how/when a
+ * lead was captured (source, preferredLanguage, and the consent
+ * audit trail) rather than the ongoing work of handling it. Those are
+ * marked `admin.readOnly` (so the normal UI doesn't invite editing
+ * them) AND locked with `access.update: isAdminField` (so the
+ * boundary is real, not just hidden — Payload Admin `readOnly` is a
+ * UX affordance, not a security control, so a direct API write must
+ * be blocked server-side too). An admin can still correct a genuine
+ * data-entry mistake through the API if truly needed; advisors
+ * cannot.
  */
 export const Applications: CollectionConfig = {
   slug: 'applications',
   labels: { singular: 'Application', plural: 'Applications' },
+  defaultSort: '-createdAt',
   admin: {
     useAsTitle: 'name',
-    defaultColumns: ['name', 'phone', 'status', 'interestedCourse', 'createdAt'],
+    defaultColumns: [
+      'createdAt',
+      'name',
+      'phone',
+      'interestedCourse',
+      'preferredLanguage',
+      'source',
+      'status',
+      'assignedTo',
+    ],
     description: 'Leads from the website. Never publicly readable.',
     group: 'Leads',
   },
   access: {
     // Never public — leads must not be exposed via the read API.
-    read: ({ req }) => Boolean(req.user),
-    create: ({ req }) => Boolean(req.user),
-    update: ({ req }) => Boolean(req.user),
-    delete: ({ req }) => Boolean(req.user),
+    read: isAdminOrAdvisor,
+    // Admin only — see the collection-level comment above for why
+    // advisor doesn't get this. The real public write path
+    // (/api/apply) never goes through this access control at all.
+    create: isAdmin,
+    update: isAdminOrAdvisor,
+    // Deleting a lead is more consequential than working one — admin
+    // only.
+    delete: isAdmin,
   },
   fields: [
     {
@@ -56,6 +102,15 @@ export const Applications: CollectionConfig = {
       name: 'assignedTo',
       type: 'relationship',
       relationTo: 'users',
+      filterOptions: {
+        // UI convenience, not a security boundary on its own — the
+        // relationship still ultimately points at any user id via
+        // the API, but Applications access control itself already
+        // gates who can write here at all (isAdminOrAdvisor above).
+        // This just keeps editors (who have no reason to work leads)
+        // out of the picker.
+        role: { in: ['admin', 'advisor'] },
+      },
       admin: { position: 'sidebar', description: 'Staff member handling this lead.' },
     },
     {
@@ -74,78 +129,122 @@ export const Applications: CollectionConfig = {
       // submission endpoint derives this value itself from whether a
       // real course was resolved server-side — it's never accepted as
       // client input, so an attacker can't pollute this field with an
-      // arbitrary string.
+      // arbitrary string. Protected post-creation (below) to keep
+      // that provenance trustworthy in Admin too.
       options: [
         { label: 'Homepage', value: 'homepage' },
         { label: 'Course page', value: 'course_page' },
       ],
-      admin: { position: 'sidebar', description: 'Where on the site this lead submitted the form.' },
-    },
-    {
-      type: 'row',
-      fields: [
-        { name: 'name', type: 'text', required: true },
-        { name: 'phone', type: 'text', required: true },
-      ],
-    },
-    { name: 'email', type: 'email' },
-    {
-      name: 'preferredLanguage',
-      type: 'select',
-      required: true,
-      defaultValue: 'ar',
-      options: locales.map((code) => ({ label: localeMeta[code].label, value: code })),
-    },
-    { name: 'interestedCourse', type: 'relationship', relationTo: 'courses' },
-    {
-      name: 'message',
-      type: 'textarea',
-      admin: { description: "The lead's own message, as submitted." },
+      access: { update: isAdminField },
+      admin: {
+        position: 'sidebar',
+        readOnly: true,
+        description: 'Where on the site this lead submitted the form. Set automatically — not editable.',
+      },
     },
     {
       name: 'internalNotes',
       type: 'textarea',
-      admin: { description: 'Staff-only notes — never shown to the lead.' },
+      admin: { description: 'Staff-only notes — never shown to the lead. The main working field for this lead.' },
     },
     {
-      type: 'collapsible',
-      label: 'UTM / campaign tracking',
-      admin: { initCollapsed: true },
-      fields: [
-        { name: 'utmSource', type: 'text' },
-        { name: 'utmMedium', type: 'text' },
-        { name: 'utmCampaign', type: 'text' },
-      ],
-    },
-    {
-      type: 'collapsible',
-      label: 'Consent',
-      admin: { initCollapsed: true },
-      fields: [
+      type: 'tabs',
+      tabs: [
         {
-          name: 'privacyConsentAt',
-          type: 'date',
-          required: true,
-          defaultValue: () => new Date().toISOString(),
-          admin: { description: 'When the lead agreed to the privacy policy.' },
+          label: 'Contact',
+          fields: [
+            {
+              type: 'row',
+              // `phone` deliberately has no manual-WhatsApp-link
+              // affordance (attempted and reverted in Milestone J):
+              // it's freeform text with no confirmed country-code
+              // convention, so stripping it to digits and building a
+              // wa.me/<digits> link risks producing a wrong or
+              // nonexistent destination for any lead saved in local
+              // format. A safe phone-number normalization strategy is
+              // deferred to the later WhatsApp architecture milestone
+              // — staff copy the visible number and open WhatsApp
+              // themselves in the meantime, which is slower but never
+              // wrong.
+              fields: [
+                { name: 'name', type: 'text', required: true },
+                { name: 'phone', type: 'text', required: true },
+              ],
+            },
+            { name: 'email', type: 'email' },
+            {
+              name: 'preferredLanguage',
+              type: 'select',
+              required: true,
+              defaultValue: 'ar',
+              options: locales.map((code) => ({ label: localeMeta[code].label, value: code })),
+              access: { update: isAdminField },
+              admin: {
+                readOnly: true,
+                description: 'The language the lead used to submit the form. Set automatically — not editable.',
+              },
+            },
+          ],
         },
         {
-          name: 'privacyPolicyVersion',
-          type: 'text',
-          admin: { description: 'Which privacy policy version was in effect, e.g. "v1".' },
+          label: 'Interest',
+          fields: [
+            { name: 'interestedCourse', type: 'relationship', relationTo: 'courses' },
+            {
+              name: 'message',
+              type: 'textarea',
+              admin: { description: "The lead's own message, as submitted." },
+            },
+          ],
         },
         {
-          name: 'marketingConsent',
-          type: 'checkbox',
-          defaultValue: false,
-          admin: { description: 'Separate, optional opt-in — never bundled with the privacy consent above.' },
+          label: 'Consent & Audit',
+          fields: [
+            {
+              name: 'privacyConsentAt',
+              type: 'date',
+              required: true,
+              defaultValue: () => new Date().toISOString(),
+              access: { update: isAdminField },
+              admin: {
+                readOnly: true,
+                description: 'When the lead agreed to the privacy policy. Set automatically — not editable.',
+              },
+            },
+            {
+              name: 'privacyPolicyVersion',
+              type: 'text',
+              access: { update: isAdminField },
+              admin: {
+                readOnly: true,
+                description: 'Which privacy policy version was in effect. Set automatically — not editable.',
+              },
+            },
+            {
+              name: 'marketingConsent',
+              type: 'checkbox',
+              defaultValue: false,
+              admin: { description: 'Separate, optional opt-in — never bundled with the privacy consent above.' },
+            },
+            {
+              name: 'marketingConsentAt',
+              type: 'date',
+              access: { update: isAdminField },
+              admin: {
+                readOnly: true,
+                description: 'Set automatically — not editable.',
+                condition: (_data, siblingData) => Boolean(siblingData?.marketingConsent),
+              },
+            },
+          ],
         },
         {
-          name: 'marketingConsentAt',
-          type: 'date',
-          admin: {
-            condition: (_data, siblingData) => Boolean(siblingData?.marketingConsent),
-          },
+          label: 'Campaign tracking',
+          fields: [
+            { name: 'utmSource', type: 'text' },
+            { name: 'utmMedium', type: 'text' },
+            { name: 'utmCampaign', type: 'text' },
+          ],
         },
       ],
     },
