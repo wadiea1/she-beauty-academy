@@ -16,7 +16,7 @@ import { isAdmin, isAdminField, isAdminOrSelf, isAuthenticated } from './access/
  * elevated access by default is the safe failure mode; every admin
  * account must be a deliberate, explicit grant (see the one-time
  * migration script that promoted the existing real account,
- * scripts/migrate-admin-role.ts).
+ * src/migrations/migrate-admin-role.ts).
  *
  * Role escalation is blocked server-side, not just hidden in the UI:
  * `role`'s own field-level access restricts changing it to admins
