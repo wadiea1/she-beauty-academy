@@ -713,7 +713,7 @@ and status is this file plus `git log`.
         at 1440px and 390px, both with normal and forced reduced
         motion — 12 + 12 combinations, zero console errors, zero
         overflow.
-- [ ] **J — Admin-friendly lead management + RBAC** in Payload. Branch
+- [x] **J — Admin-friendly lead management + RBAC** in Payload. Branch
       `feat/admin-lead-management`. What happens *after* a lead reaches
       Payload — staff review, contact, status, notes, eventual
       outcome — not a new intake path (Milestone I already built that).
@@ -801,17 +801,73 @@ and status is this file plus `git log`.
       control on `Applications`, unaffected by who's a valid
       `assignedTo` value).
 
-      **Manual WhatsApp convenience — deferred**: a clickable "Open
-      WhatsApp" affordance next to a lead's phone number would need a
-      custom Payload admin `Cell` component (a real `'use client'`
-      component registered through the generated `importMap.js`, not
-      a plain field option) to render as a link rather than a text
-      input. Disproportionate scope for what this milestone is
-      actually about, and a broken custom component risks breaking
-      the entire Applications list view — a worse outcome than not
-      having the convenience. Deferred, not attempted; `wa.me/<phone>`
-      remains constructible by staff manually in the meantime. No
-      WhatsApp API, no automation, regardless.
+      **Manual WhatsApp convenience — implemented**: turned out to be
+      small enough to do properly rather than defer. A single
+      `'use client'` custom field component
+      (`src/components/admin/WhatsAppLink.tsx`), wired via the `phone`
+      field's `admin.components.afterInput` and registered through the
+      regenerated `importMap.js`, renders a plain `wa.me/<digits>`
+      link next to the phone field on the Applications detail view.
+      It reads the field's own live value with `@payloadcms/ui`'s
+      `useField` hook (added as a direct dependency, pinned to
+      3.88.0 — previously only present transitively via
+      `@payloadcms/next`) and strips non-digit characters only; it
+      never assumes or prepends a country code, since `phone` is
+      freeform text and guessing one would be inventing a business
+      fact. Still exactly the manual handoff the milestone scoped: no
+      Meta Cloud API, no Twilio, no message pre-fill, no background
+      job, no send of any kind, no claim anything was sent — the link
+      only opens WhatsApp's own compose UI, same as a staff member
+      retyping the number by hand. Verified live in the real Admin
+      UI: a disposable test lead with phone "050-123 4567" rendered a
+      working link with `href="https://wa.me/0501234567"`.
+
+      **Verification — real Local/REST APIs, disposable QA accounts**
+      (never the real admin; all QA users/leads/test course deleted
+      afterward, confirmed by a final DB read showing only the one
+      real admin account and zero applications): 53 REST-API checks
+      covering the full admin/editor/advisor matrix on Applications,
+      Users, Courses, and the Homepage global — anonymous access
+      denied everywhere it must be; editor has zero Applications
+      access (403 on read/create); advisor can read/create/update
+      Applications but not delete (403); the five protected fields
+      (`source`, `privacyConsentAt`, `privacyPolicyVersion`,
+      `marketingConsentAt`, `preferredLanguage`) provably survive a
+      same-request tamper attempt from an advisor while `status` in
+      the same request does change — proving the protection is
+      per-field, not a whole-request rejection; a non-admin's attempt
+      to set their own `role` to `admin` returns 200 (self-update is
+      otherwise allowed) but the role demonstrably does not change;
+      only an admin can create Users or change another account's
+      role; Courses read is open to any staff role but write is
+      admin/editor only, delete admin-only for Media. All passed.
+      Confirmed along the way (not assumed): global updates in this
+      Payload version go through `POST /api/globals/:slug`, not
+      `PATCH` — a `PATCH` returns Payload's own 404, unrelated to
+      access control; verified from
+      `node_modules/payload/dist/globals/endpoints/index.js`.
+
+      Also verified in the real Payload Admin browser UI (headless
+      Edge via CDP, same methodology as prior milestones) as QA
+      editor and QA advisor accounts: the editor's sidebar has no
+      Applications/Leads entry at all, and visiting its URL directly
+      renders Payload's own 404 with no lead data in the DOM; the
+      advisor's sidebar does show Applications, the list/detail views
+      render correctly, a status-filtered list view surfaces the
+      right lead, the `assignedTo` field is present, and — genuinely
+      confirmed in the rendered DOM, not just via the REST API — the
+      protected `source` field renders as a disabled
+      `react-select--is-disabled` control for a non-admin.
+
+      Full public-site regression re-run after all of the above:
+      all 3 locales load, all 3 course detail pages load, an invalid
+      `courseSlug` on `/api/apply` still returns 400 with a
+      `fieldErrors.courseSlug`, and an anonymous `POST
+      /api/applications` (bypassing `/api/apply` entirely) still
+      returns 403 — the public lead-intake and draft-privacy
+      boundaries from Milestones H/I are unaffected by this
+      milestone's access-control changes. No web-payment
+      functionality was touched or added.
 - [ ] **K — SEO**: per-locale metadata, hreflang, sitemap, robots,
       structured data.
 - [ ] **L — Accessibility / responsive / performance pass**.
