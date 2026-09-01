@@ -611,6 +611,67 @@ and status is this file plus `git log`.
       homepage; from a course page it would navigate away instead of
       scrolling to that page's own form. Fixed to a plain `#apply`
       anchor, same precedent.
+
+      **Verified live** (every claim above proven, not assumed — real
+      HTTP requests against a production build, disposable QA data
+      deleted afterward, real course/testimonial counts reconfirmed
+      untouched):
+      - Route precedence: `POST /api/apply` reaches this handler, not
+        Payload's catch-all (confirmed by its distinct `{"ok":true}`
+        response shape vs. Payload's own error shape).
+      - 3 valid submissions (`en`/`ar`/`he`, one per locale, one with
+        a resolved course, one general, one with marketing consent) —
+        every stored field correct: `status: 'new'`, derived `source`,
+        resolved `interestedCourse`, real server `privacyConsentAt`,
+        `privacyPolicyVersion: 'unpublished-v0'`, `marketingConsentAt`
+        set only when consent was true.
+      - Forged operational fields in the request body
+        (`status: 'enrolled'`, a 2020 `privacyConsentAt`, a fake
+        `source`, `internalNotes`, `assignedTo`) — all silently
+        ignored; the stored record has the server's own values in
+        every case, not the attacker's.
+      - Invalid/nonexistent `courseSlug` — submission still succeeds,
+        `interestedCourse` correctly left unset rather than crashing
+        or storing a bad reference.
+      - Honeypot filled — same `{"ok":true}` response as a real
+        submission, but confirmed via document count that **no
+        record was created**.
+      - Missing name/phone, invalid email, missing privacy consent —
+        each a distinct `400` with a field-scoped error, nothing else
+        accepted.
+      - Malformed JSON body — `400`. Wrong/missing `Content-Type`
+        (`application/x-www-form-urlencoded`, `text/plain`, absent)
+        — `415`. Oversized body (>10KB) — `413`. An in-range body
+        with one field over its own max (2000-char message) — `400`
+        field validation, proving the two size checks are independent
+        layers, not one substituting for the other.
+      - Origin header matching the request's own host — succeeds.
+        Origin set to an unrelated domain — `403`, before the body is
+        even parsed.
+      - Direct `POST /api/applications` (Payload's own generated REST
+        route, bypassing `/api/apply` entirely) — `403`, same as
+        anonymous `GET`. Confirms the collection's own access control
+        is still the real backstop, not just this route's checks.
+      - Rate limit: 5 rapid submissions succeed, the 6th gets a real
+        `429` — proven with the actual configured value (5/10min),
+        not a raised test value. (The malicious-input battery above
+        needed more than 5 requests, so the limiter was temporarily
+        raised for that stretch and reverted — see the git history —
+        rather than fighting the real limit mid-test.)
+      - Duplicate protection: the same phone + same course submitted
+        3 times rapidly — all 3 report success, but only 1 record
+        exists. The same phone with a *different* course submitted
+        immediately after — a genuine 2nd record is created,
+        confirming the dedup key is phone+course, not phone alone.
+      - Form UI (real browser, not just the API): empty submit shows
+        the localized field error, sets `aria-invalid`, and moves
+        focus to the first invalid field; a valid submit replaces the
+        form with the localized success message and moves focus into
+        it. Course select is preselected correctly on a course page
+        and defaults to "general" on the homepage, in all 3 locales,
+        at 1440px and 390px, both with normal and forced reduced
+        motion — 12 + 12 combinations, zero console errors, zero
+        overflow.
 - [ ] **J — Admin-friendly lead management** in Payload.
 - [ ] **K — SEO**: per-locale metadata, hreflang, sitemap, robots,
       structured data.
