@@ -1,6 +1,7 @@
 import type { GlobalConfig } from 'payload'
 import { requireNavigationLocalesToPublish } from './hooks/requireNavigationLocalesToPublish'
 import { publishedOnlyAccess } from './publishedOnlyAccess'
+import { isAdminOrEditor } from '../collections/access/roles'
 
 /**
  * The site's navigation structure — which links exist and in what order.
@@ -19,8 +20,8 @@ export const Navigation: GlobalConfig = {
   versions: { drafts: true },
   access: {
     read: publishedOnlyAccess,
-    readVersions: ({ req }) => Boolean(req.user),
-    update: ({ req }) => Boolean(req.user),
+    readVersions: isAdminOrEditor,
+    update: isAdminOrEditor,
   },
   hooks: {
     beforeChange: [requireNavigationLocalesToPublish],

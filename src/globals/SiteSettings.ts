@@ -1,5 +1,6 @@
 import type { GlobalConfig } from 'payload'
 import { publishedOnlyAccess } from './publishedOnlyAccess'
+import { isAdminOrEditor } from '../collections/access/roles'
 
 /**
  * Business/contact info, editable by staff without a code deploy. This is
@@ -22,8 +23,8 @@ export const SiteSettings: GlobalConfig = {
   versions: { drafts: true },
   access: {
     read: publishedOnlyAccess,
-    readVersions: ({ req }) => Boolean(req.user),
-    update: ({ req }) => Boolean(req.user),
+    readVersions: isAdminOrEditor,
+    update: isAdminOrEditor,
   },
   fields: [
     {

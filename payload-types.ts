@@ -134,11 +134,17 @@ export interface UserAuthOperations {
   };
 }
 /**
+ * Staff accounts. Only an admin can create accounts or change roles.
+ *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "users".
  */
 export interface User {
   id: number;
+  /**
+   * Controls what this account can access in Admin. Only an admin can change this.
+   */
+  role: 'admin' | 'editor' | 'advisor';
   updatedAt: string;
   createdAt: string;
   email: string;
@@ -365,12 +371,19 @@ export interface Application {
    */
   consultationAt?: string | null;
   /**
-   * Where on the site this lead submitted the form.
+   * Where on the site this lead submitted the form. Set automatically — not editable.
    */
   source?: ('homepage' | 'course_page') | null;
+  /**
+   * Staff-only notes — never shown to the lead. The main working field for this lead.
+   */
+  internalNotes?: string | null;
   name: string;
   phone: string;
   email?: string | null;
+  /**
+   * The language the lead used to submit the form. Set automatically — not editable.
+   */
   preferredLanguage: 'ar' | 'he' | 'en';
   interestedCourse?: (number | null) | Course;
   /**
@@ -378,25 +391,24 @@ export interface Application {
    */
   message?: string | null;
   /**
-   * Staff-only notes — never shown to the lead.
-   */
-  internalNotes?: string | null;
-  utmSource?: string | null;
-  utmMedium?: string | null;
-  utmCampaign?: string | null;
-  /**
-   * When the lead agreed to the privacy policy.
+   * When the lead agreed to the privacy policy. Set automatically — not editable.
    */
   privacyConsentAt: string;
   /**
-   * Which privacy policy version was in effect, e.g. "v1".
+   * Which privacy policy version was in effect. Set automatically — not editable.
    */
   privacyPolicyVersion?: string | null;
   /**
    * Separate, optional opt-in — never bundled with the privacy consent above.
    */
   marketingConsent?: boolean | null;
+  /**
+   * Set automatically — not editable.
+   */
   marketingConsentAt?: string | null;
+  utmSource?: string | null;
+  utmMedium?: string | null;
+  utmCampaign?: string | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -495,6 +507,7 @@ export interface PayloadMigration {
  * via the `definition` "users_select".
  */
 export interface UsersSelect<T extends boolean = true> {
+  role?: T;
   updatedAt?: T;
   createdAt?: T;
   email?: T;
@@ -616,20 +629,20 @@ export interface ApplicationsSelect<T extends boolean = true> {
   assignedTo?: T;
   consultationAt?: T;
   source?: T;
+  internalNotes?: T;
   name?: T;
   phone?: T;
   email?: T;
   preferredLanguage?: T;
   interestedCourse?: T;
   message?: T;
-  internalNotes?: T;
-  utmSource?: T;
-  utmMedium?: T;
-  utmCampaign?: T;
   privacyConsentAt?: T;
   privacyPolicyVersion?: T;
   marketingConsent?: T;
   marketingConsentAt?: T;
+  utmSource?: T;
+  utmMedium?: T;
+  utmCampaign?: T;
   updatedAt?: T;
   createdAt?: T;
 }
