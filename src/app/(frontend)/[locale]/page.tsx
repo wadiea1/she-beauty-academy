@@ -47,6 +47,9 @@ export default async function HomePage({ params }: PageProps<'/[locale]'>) {
           ctaLabel={dict.nav.apply}
           whatsappLabel={dict.footer.whatsapp}
           whatsappNumber={siteSettings.whatsappNumber}
+          locale={locale}
+          courses={courses}
+          applyFormDict={dict.applyForm}
         />
       </ThreadContainer>
       <SocialProof
