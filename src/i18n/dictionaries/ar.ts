@@ -68,6 +68,7 @@ const ar = {
     phoneError: 'يرجى إدخال رقم هاتف صحيح',
     emailError: 'يرجى إدخال بريد إلكتروني صحيح',
     privacyConsentError: 'يرجى الموافقة للمتابعة',
+    courseUnavailable: 'الدورة المختارة غير متاحة. يرجى اختيار دورة أخرى.',
     genericValidationError: 'يرجى التحقق من بياناتكِ والمحاولة مرة أخرى',
   },
 } satisfies Dictionary

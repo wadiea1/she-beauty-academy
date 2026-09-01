@@ -57,9 +57,18 @@ export async function submitApplication(rawInput: unknown): Promise<SubmitApplic
     // client-submitted id. overrideAccess: false runs this through
     // the exact published-only boundary the public site itself uses,
     // so a slug for an unpublished/nonexistent course can't be
-    // resolved into a relationship either. It doesn't fail the
-    // submission — an invalid/stale slug just falls back to
-    // "general", the same outcome as not selecting a course at all.
+    // resolved into a relationship either.
+    //
+    // Correctness fix: an *empty* courseSlug is a deliberate general
+    // inquiry (valid) — but a *non-empty* one that fails to resolve
+    // must reject the submission outright, not silently downgrade to
+    // "general". Silently downgrading would let a stale page (a
+    // course unpublished after the visitor loaded it) or a forged
+    // request quietly misrepresent what was actually asked for.
+    // Deliberately indistinguishable whether the slug never existed
+    // or matches a real-but-unpublished course — both simply return
+    // zero docs from this same published-only query, so there's no
+    // separate code path that could leak which case it was.
     let courseId: number | undefined
     if (input.courseSlug) {
       const found = await payload.find({
@@ -70,6 +79,13 @@ export async function submitApplication(rawInput: unknown): Promise<SubmitApplic
         depth: 0,
       })
       courseId = found.docs[0]?.id
+      if (!courseId) {
+        return {
+          ok: false,
+          reason: 'validation',
+          fieldErrors: { courseSlug: 'Course not available' },
+        }
+      }
     }
     const source: 'homepage' | 'course_page' = courseId ? 'course_page' : 'homepage'
 

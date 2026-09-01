@@ -650,9 +650,30 @@ and status is this file plus `git log`.
         `source`, `internalNotes`, `assignedTo`) — all silently
         ignored; the stored record has the server's own values in
         every case, not the attacker's.
-      - Invalid/nonexistent `courseSlug` — submission still succeeds,
-        `interestedCourse` correctly left unset rather than crashing
-        or storing a bad reference.
+      - **Correction**: an earlier version of this milestone let a
+        non-empty but unresolvable `courseSlug` silently downgrade to
+        a general inquiry (submission succeeds, `interestedCourse`
+        left unset) — that conflated "no course was requested" with
+        "a course was requested but isn't available," which a stale
+        page, changed CMS content, or a forged request could trigger
+        for real. Fixed: `courseSlug` omitted/empty is still a valid
+        general inquiry, but a non-empty `courseSlug` that doesn't
+        resolve to a real published course now rejects the whole
+        submission (`400`, a `courseSlug` field error, no record
+        created) rather than silently proceeding as general. `source`
+        is only ever `homepage`/`course_page` after this resolution
+        succeeds — an invalid slug can no longer quietly relabel
+        itself as a `homepage` submission. The response is
+        deliberately identical whether the slug never existed or
+        matches a real-but-unpublished course (both queries return
+        zero docs from the same published-only boundary), so the API
+        never reveals which case it was. Verified live: general
+        inquiry (`courseSlug` omitted) → `200`, 1 record,
+        `interestedCourse` unset; a real published slug → `200`,
+        correctly resolved; a completely fake slug → `400`, **zero**
+        records created; a disposable draft/unpublished course's own
+        slug → `400`, **zero** records created, response
+        byte-for-byte identical to the fake-slug case — then deleted.
       - Honeypot filled — same `{"ok":true}` response as a real
         submission, but confirmed via document count that **no
         record was created**.

@@ -60,13 +60,4 @@ export class InMemoryRateLimiter implements RateLimiter {
 // temporarily raised for the rest of the malicious-input test battery
 // and reverted back to this value afterward — see
 // docs/IMPLEMENTATION_PLAN.md, Milestone I.
-// One shared instance per process — 5 submissions per IP per 10
-// minutes. Deliberately generous rather than aggressive: this limiter
-// exists to blunt automated abuse, not to second-guess a genuine
-// visitor who submits, corrects a typo, and submits again. Genuinely
-// verified, not just trusted: this exact limit blocked this project's
-// own repeated QA testing mid-session with a real 429 before being
-// temporarily raised for the rest of the malicious-input test battery
-// and reverted back to this value afterward — see
-// docs/IMPLEMENTATION_PLAN.md, Milestone I.
 export const applyRateLimiter: RateLimiter = new InMemoryRateLimiter(5, 10 * 60 * 1000)

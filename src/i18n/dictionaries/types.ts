@@ -71,10 +71,16 @@ export interface Dictionary {
   // `course.apply*` above, which is the surrounding section's intro
   // copy (eyebrow/heading/body), not the form itself. Field-level
   // server validation errors are deliberately not surfaced verbatim
-  // here: the client mirrors the server's rules for immediate,
-  // localized feedback, and only falls back to `genericValidationError`
-  // if a request the client itself would have blocked somehow reaches
-  // the server anyway.
+  // here for fields the client already validates itself (name/phone/
+  // email/privacyConsent) — the client mirrors the server's rules for
+  // immediate, localized feedback there, falling back to
+  // `genericValidationError` only if a request the client itself
+  // would have blocked somehow reaches the server anyway. `courseSlug`
+  // is the one field the client genuinely *can't* pre-validate — the
+  // dropdown only ever offers real courses, but the server can still
+  // reject it (stale page, CMS content changed, a forged request), so
+  // `courseUnavailable` is shown whenever the server specifically
+  // reports that rejection.
   applyForm: {
     nameLabel: string
     phoneLabel: string
@@ -96,6 +102,7 @@ export interface Dictionary {
     phoneError: string
     emailError: string
     privacyConsentError: string
+    courseUnavailable: string
     genericValidationError: string
   }
 }

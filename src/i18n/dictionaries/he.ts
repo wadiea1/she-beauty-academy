@@ -68,6 +68,7 @@ const he = {
     phoneError: 'נא להזין מספר טלפון תקין',
     emailError: 'נא להזין כתובת אימייל תקינה',
     privacyConsentError: 'נא לאשר כדי להמשיך',
+    courseUnavailable: 'הקורס שנבחר אינו זמין. נא לבחור קורס אחר.',
     genericValidationError: 'נא לבדוק את הפרטים שלך ולנסות שוב',
   },
 } satisfies Dictionary

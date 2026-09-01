@@ -68,6 +68,7 @@ const en = {
     phoneError: 'Please enter a valid phone number',
     emailError: 'Please enter a valid email address',
     privacyConsentError: 'Please accept to continue',
+    courseUnavailable: 'The selected course is not available. Please choose another course.',
     genericValidationError: 'Please check your information and try again',
   },
 } satisfies Dictionary

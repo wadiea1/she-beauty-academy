@@ -32,6 +32,11 @@ interface FieldErrors {
   name?: string
   phone?: string
   email?: string
+  /** Set only from the *server's* response — the dropdown only ever
+   * offers real courses, so the client can't pre-validate this one.
+   * A stale page (a course unpublished after the visitor loaded it)
+   * or a forged request can still trigger it. */
+  course?: string
   privacyConsent?: string
 }
 
@@ -77,10 +82,12 @@ export function ApplicationForm({ locale, courses, preselectedCourseSlug, dict, 
   const idPrefix = useId()
   const [status, setStatus] = useState<Status>('idle')
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({})
-  // Every field that can be the "first error" (name, phone, email,
-  // privacyConsent) is an <input> — the course select and message
-  // textarea are never invalid, so this doesn't need a broader type.
+  // Every client-validated field (name, phone, email, privacyConsent)
+  // is an <input> — a separate ref for the course <select>, since a
+  // single ref object typed for one DOM element can't correctly type
+  // as a JSX ref prop for a different element type.
   const firstErrorRef = useRef<HTMLInputElement>(null)
+  const firstErrorSelectRef = useRef<HTMLSelectElement>(null)
   // A plain div, not a ref on <Heading> — Heading isn't wrapped in
   // forwardRef, and while React 19 allows passing `ref` to a plain
   // function component directly, a native DOM element here is the
@@ -130,8 +137,34 @@ export function ApplicationForm({ locale, courses, preselectedCourseSlug, dict, 
         return
       }
 
+      // The server can reject a courseSlug the client itself never
+      // flagged (its dropdown only ever lists real courses) — a stale
+      // page, CMS content that changed underneath it, or a forged
+      // request. That specific rejection gets its own message next to
+      // the course field; anything else falls back to the generic
+      // banner, matching how a genuinely unexpected server error was
+      // already handled.
+      let courseRejected = false
+      try {
+        const body: unknown = await res.json()
+        courseRejected =
+          typeof body === 'object' &&
+          body !== null &&
+          'fieldErrors' in body &&
+          typeof (body as { fieldErrors?: unknown }).fieldErrors === 'object' &&
+          (body as { fieldErrors?: Record<string, unknown> }).fieldErrors !== null &&
+          'courseSlug' in ((body as { fieldErrors: Record<string, unknown> }).fieldErrors)
+      } catch {
+        // Not JSON, or no body — treat as a generic error below.
+      }
+
       setStatus('error')
-      setFieldErrors({})
+      if (courseRejected) {
+        setFieldErrors({ course: 'course' })
+        requestAnimationFrame(() => firstErrorSelectRef.current?.focus())
+      } else {
+        setFieldErrors({})
+      }
     } catch {
       setStatus('error')
       setFieldErrors({})
@@ -156,7 +189,7 @@ export function ApplicationForm({ locale, courses, preselectedCourseSlug, dict, 
   // field — that pattern is easy to get subtly wrong (a later field
   // missing one clause in its chain silently steals the focus target
   // from an earlier, actually-first error).
-  const firstErrorField = (['name', 'phone', 'email', 'privacyConsent'] as const).find(
+  const firstErrorField = (['name', 'phone', 'email', 'course', 'privacyConsent'] as const).find(
     (key) => fieldErrors[key],
   )
   // Inlined as `name === firstErrorField ? firstErrorRef : undefined`
@@ -262,9 +295,12 @@ export function ApplicationForm({ locale, courses, preselectedCourseSlug, dict, 
             {dict.courseLabel}
           </label>
           <select
+            ref={firstErrorField === 'course' ? firstErrorSelectRef : undefined}
             id={fieldId('course')}
             name="courseSlug"
             defaultValue={preselectedCourseSlug ?? ''}
+            aria-invalid={Boolean(fieldErrors.course)}
+            aria-describedby={fieldErrors.course ? errorId('course') : undefined}
             className={inputClass}
           >
             <option value="">{dict.courseGeneralOption}</option>
@@ -274,6 +310,11 @@ export function ApplicationForm({ locale, courses, preselectedCourseSlug, dict, 
               </option>
             ))}
           </select>
+          {fieldErrors.course && (
+            <p id={errorId('course')} className={errorClass}>
+              {dict.courseUnavailable}
+            </p>
+          )}
         </div>
       </div>
 
