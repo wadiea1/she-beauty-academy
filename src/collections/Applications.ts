@@ -141,7 +141,17 @@ export const Applications: CollectionConfig = {
               type: 'row',
               fields: [
                 { name: 'name', type: 'text', required: true },
-                { name: 'phone', type: 'text', required: true },
+                {
+                  name: 'phone',
+                  type: 'text',
+                  required: true,
+                  admin: {
+                    // Manual WhatsApp handoff — a plain wa.me deep
+                    // link next to the number, nothing automated. See
+                    // src/components/admin/WhatsAppLink.tsx.
+                    components: { afterInput: ['@/components/admin/WhatsAppLink#WhatsAppLink'] },
+                  },
+                },
               ],
             },
             { name: 'email', type: 'email' },
