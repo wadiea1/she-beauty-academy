@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
-import { isLocale } from '@/i18n/config'
+import { isLocale, locales } from '@/i18n/config'
 import { getDictionary } from '@/i18n/getDictionary'
 import {
   getPublishedCourseBySlug,
@@ -9,6 +9,9 @@ import {
   getSiteSettings,
   type CourseDetail,
 } from '@/lib/payload/queries'
+import { absoluteUrl, getRobotsMetadata } from '@/lib/seo/baseUrl'
+import { ogLocaleFor, resolveOgImage } from '@/lib/seo/metadata'
+import { buildBreadcrumbJsonLd, jsonLdScriptProps } from '@/lib/seo/structuredData'
 import { CourseHero } from '@/components/course/CourseHero'
 import { CourseOverview } from '@/components/course/CourseOverview'
 import { CourseOutcomes } from '@/components/course/CourseOutcomes'
@@ -29,6 +32,19 @@ export async function generateMetadata({
     getPublishedCourseBySlug(locale, slug),
     getSiteSettings(locale),
   ])
+  // Deliberately not distinguishing "no such slug" from "matches an
+  // unpublished course" here either (see the same reasoning below, in
+  // the page component) — no title/description/canonical/openGraph is
+  // emitted for a 404, so nothing here can leak a draft's existence.
+  // A plain {}, not an explicit `robots: noindex` — verified that it
+  // wouldn't matter either way: when notFound() actually fires, Next
+  // renders courses/[slug]/not-found.tsx instead of this page, and
+  // that boundary does NOT inherit this page's own generateMetadata
+  // (only the ancestor layouts'), so anything returned here for the
+  // 404 case is never actually used. Next's own auto-injected
+  // `noindex` for the 404 response, plus the ancestor layouts having
+  // no `robots` default of their own to leak (see [locale]/layout.tsx),
+  // are what actually keep this case clean.
   if (!course) return {}
 
   // Plain string, not `${course.title} · ${brandMark}` — the root
@@ -40,18 +56,41 @@ export async function generateMetadata({
   const description =
     course.metaDescription || siteSettings.defaultSeo.metaDescription || course.shortDescription
 
-  // No production domain is configured yet (see docs/IMPLEMENTATION_PLAN.md,
-  // Milestone H) — relative paths rather than a fabricated absolute one.
+  // metadataBase is set once in the root [locale]/layout.tsx (from
+  // NEXT_PUBLIC_SERVER_URL — see src/lib/seo/baseUrl.ts) and applies
+  // to every relative URL-based field below, including these; no
+  // production domain is guessed here.
   const path = `/${locale}/courses/${slug}`
-  const alternateLocales = ['ar', 'he', 'en'] as const
+  const url = absoluteUrl(path)
+  const ogImages = resolveOgImage(course.heroImage, siteSettings.defaultSeo.ogImage)
 
   return {
     title,
     description,
     alternates: {
       canonical: path,
-      languages: Object.fromEntries(alternateLocales.map((l) => [l, `/${l}/courses/${slug}`])),
+      languages: {
+        ...Object.fromEntries(locales.map((l) => [l, `/${l}/courses/${slug}`])),
+        // Same real-routing-behavior rationale as the homepage's
+        // x-default (see [locale]/layout.tsx).
+        'x-default': `/ar/courses/${slug}`,
+      },
     },
+    openGraph: {
+      type: 'website',
+      locale: ogLocaleFor(locale),
+      url,
+      title,
+      description,
+      images: ogImages,
+    },
+    twitter: {
+      card: ogImages ? 'summary_large_image' : 'summary',
+      title,
+      description,
+      images: ogImages,
+    },
+    robots: getRobotsMetadata(),
   }
 }
 
@@ -125,28 +164,41 @@ export default async function CoursePage({ params }: PageProps<'/[locale]/course
           ? c.enrollmentComingSoon
           : c.enrollmentFull
 
-  const jsonLd = {
+  const courseUrl = absoluteUrl(`/${locale}/courses/${slug}`)
+  const courseJsonLd = {
     '@context': 'https://schema.org',
     '@type': 'Course',
     name: course.title,
     description: course.shortDescription,
+    url: courseUrl,
     provider: {
       '@type': 'Organization',
       name: `${dict.common.brandMark} ${dict.common.brandSubtitle}`,
     },
     inLanguage: locale,
-    ...(course.heroImage.src ? { image: course.heroImage.src } : {}),
+    ...(course.heroImage.src ? { image: absoluteUrl(course.heroImage.src) } : {}),
+    // No Offer/AggregateRating/Review/CourseInstance/duration, and no
+    // certification claim — none of that is truthfully known yet (all
+    // 3 real courses currently have certificationType: 'none'). Add a
+    // credential property here only once a real course actually has
+    // one, not speculatively.
   }
 
-  // Escapes `<` so a `</script>` (or similar) inside CMS-entered text
-  // (title, shortDescription) can't prematurely close this tag — staff
-  // are trusted, but this costs nothing and matches Next's own
-  // documented JSON-LD safety guidance.
-  const jsonLdString = JSON.stringify(jsonLd).replace(/</g, '\\u003c')
+  // Home → course, 2 levels only — deliberately no "Courses" middle
+  // step: CourseBreadcrumb's own visual link goes to `/{locale}#courses`
+  // (the homepage itself, see that component), not a separate
+  // `/courses` page that doesn't exist. A BreadcrumbList step must be
+  // a real, distinct page; pretending one exists would misrepresent
+  // the site's actual structure.
+  const breadcrumbJsonLd = buildBreadcrumbJsonLd([
+    { name: c.breadcrumbHome, url: absoluteUrl(`/${locale}`) },
+    { name: course.title, url: courseUrl },
+  ])
 
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdString }} />
+      <script {...jsonLdScriptProps(courseJsonLd)} />
+      <script {...jsonLdScriptProps(breadcrumbJsonLd)} />
 
       <CourseHero
         locale={locale}

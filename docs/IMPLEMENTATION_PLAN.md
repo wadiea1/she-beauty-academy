@@ -906,8 +906,230 @@ and status is this file plus `git log`.
       boundaries from Milestones H/I are unaffected by this
       milestone's access-control changes. No web-payment
       functionality was touched or added.
-- [ ] **K — SEO**: per-locale metadata, hreflang, sitemap, robots,
-      structured data.
+- [x] **K — Production SEO + discoverability**. Branch `feat/seo`.
+      Technical SEO layer for the existing site — no new marketing
+      content or invented business claims.
+
+      **Audit**: no `robots.ts`/`sitemap.ts` exist yet, but
+      `src/proxy.ts`'s matcher already excludes `robots.txt` and
+      `sitemap.xml` from the locale-redirect proxy — the file-based
+      routes this milestone adds were anticipated. `NEXT_PUBLIC_SERVER_URL`
+      already exists in `.env`/`.env.example` (`http://localhost:3000`
+      locally) but is unused anywhere in `src/` — this milestone is
+      what wires it in. The course detail page already has a working
+      `generateMetadata` (title, description, `alternates.canonical`
+      + `languages`, deliberately relative paths with a comment
+      explaining no production domain is configured) and a Course
+      JSON-LD block (name/description/provider/inLanguage, image only
+      if `heroImage.src` is truthy) — both correct in shape, extended
+      rather than replaced. The homepage (`[locale]/page.tsx`) has no
+      `generateMetadata` of its own; it inherits the root
+      `[locale]/layout.tsx`'s `title.default`/`template`/`description`
+      entirely. `SiteSettingsContent` (query layer) deliberately omits
+      `ogImage` today with a comment ("none is set today, and none
+      should be invented") even though the schema field exists.
+      Confirmed via a live query: zero `Media` documents exist at all
+      in the database right now — every course's `heroImage` is
+      `null` — so any OG-image code path is exercised as "correctly
+      omits image" today, not tested with a real image; it will start
+      resolving automatically once real photography is uploaded, no
+      code change needed then. `favicon.ico` is still Next's default
+      starter icon, not real brand iconography — left alone;
+      fabricating a "SHE" logo isn't this milestone's job. No
+      `/courses` listing route exists — `CourseBreadcrumb`'s middle
+      "Courses" crumb deliberately links to the homepage's `#courses`
+      section, not a separate page (see that component's own
+      comment).
+
+      **Base URL — never a guessed production domain**:
+      `src/lib/seo/baseUrl.ts` reads `NEXT_PUBLIC_SERVER_URL` and
+      falls back to `http://localhost:3000` only when unset (logged
+      once via `console.warn`, never silently). No
+      `shebeautyacademy.com`/`example.com` guess anywhere in the
+      codebase. `metadataBase` is set once, in the root
+      `[locale]/layout.tsx`'s `generateMetadata`, from this same
+      helper — every relative URL-based metadata field in every
+      route below it (course pages included) resolves against it
+      automatically. Milestone M's one required action for this
+      layer: set `NEXT_PUBLIC_SERVER_URL` to the real production
+      domain in that environment. Until then, a local/dev deployment
+      truthfully advertises its own local URL — which is correct for
+      that environment, not a bug to hide.
+
+      **Indexing — environment-gated, safe by default**: a second env
+      var, `ALLOW_SEARCH_INDEXING` (server-only, no `NEXT_PUBLIC_`
+      prefix needed — only read inside `robots.ts`/`sitemap.ts`,
+      never in browser code), defaults to "not allowed" whenever
+      unset or not exactly `"true"`. `NODE_ENV=production` alone
+      can't distinguish a real production deploy from a staging/
+      preview one (most providers run production builds for
+      previews too), so indexing is gated on this explicit,
+      deliberate opt-in instead — nothing this milestone can detect
+      on its own decides that; it's Milestone M's second required
+      action, set only on the real production environment. Local
+      `.env`/`.env.example` leave it unset (disallowed) — correct for
+      every environment before a real deploy exists.
+
+      **Source-of-truth hierarchy** (documented once, not re-decided
+      per page): title — CMS override (`Course.metaTitle` /
+      `SiteSettings.defaultSeo.metaTitle`) → page-appropriate default
+      (course title / the existing brand title) → never a bare
+      brand-suffix duplicate (the Milestone H title-template bug is
+      the reason `title.absolute` is used wherever a CMS override is
+      set, so it can't recur here). Description — CMS override
+      (`Course.metaDescription` / `SiteSettings.defaultSeo.metaDescription`)
+      → `Course.shortDescription` / `dict.common.tagline`. Canonical —
+      always the current locale's own URL, never another locale's.
+      OG/Twitter image — `Course.heroImage` (that specific course's
+      real photo) → `SiteSettings.defaultSeo.ogImage` → omitted.
+      `SiteSettingsContent.defaultSeo` now exposes `ogImage` (still
+      typed nullable, still never fabricated — just no longer
+      hidden from the one caller that has a legitimate use for it).
+
+      **hreflang / alternates**: every indexable page declares
+      `alternates.languages` for all 3 locales plus `x-default`
+      pointing at the same URL as the `ar` entry — a truthful
+      statement of this site's actual routing (`/` redirects to
+      `/ar`), not an invented landing page. Each locale canonicalizes
+      to itself, never to Arabic — Milestone H's existing course-page
+      implementation already did this correctly; the homepage now
+      matches it.
+
+      **Structured data** — `src/lib/seo/structuredData.ts` centralizes
+      the safe JSON-LD `<script>` serialization (the `<` → `<`
+      escaping already used for Course, now shared) plus typed
+      builders. Implemented, using only currently-true facts:
+      `EducationalOrganization` + `WebSite` (via one `@graph`, emitted
+      site-wide from the layout) — `name`/`url`/`inLanguage` always;
+      `sameAs` only with a real Instagram URL built from
+      `SiteSettings.instagramHandle` (omitted otherwise); `telephone`/
+      `email`/`address` only if those `SiteSettings` fields are set
+      (none are, today — so these properties are absent from the
+      live output right now, not fabricated placeholders); no `logo`
+      (no real brand asset exists yet, and pointing schema.org at
+      Next's default favicon would misrepresent it as SHE's actual
+      logo). `Course` (existing, extended with an absolute `url` and
+      the same conditional `image`). `BreadcrumbList` on course pages
+      — 2 levels only (Home → course), deliberately omitting a
+      "Courses" middle item since it doesn't correspond to a real,
+      distinct page (`CourseBreadcrumb`'s own link goes to
+      `/{locale}#courses`, the homepage itself) — pretending a
+      `/courses` page exists would misrepresent the site's real
+      structure. No `Offer`/`AggregateRating`/`Review`/
+      `CourseInstance`/duration/certification claim anywhere — none
+      of that is truthfully known, and all 3 real courses currently
+      have `certificationType: 'none'`.
+
+      **Sitemap** (`src/app/sitemap.ts`) — reuses the existing cached
+      query layer (`getPublishedCourses`, `getHomepage`, both already
+      `overrideAccess: false` / `fallbackLocale: false`), not a new
+      parallel data path. `status` isn't a localized field on
+      `Courses`, so one locale's query already reflects the true
+      published set for all locales — no need to query 3×. Generates
+      3 homepage URLs + (published courses × 3 locales) — currently
+      3×3=9 — entirely from that real data, never a hardcoded count;
+      it scales automatically if a 4th course is published. Each
+      entry gets the same `alternates.languages` (+`x-default`) as
+      the HTML `<head>` output, and a real `lastModified` sourced from
+      that document's own `updatedAt` (extended `CourseContent` /
+      `HomepageContent` to expose it — additive, not a breaking
+      change to either type). No `changeFrequency`/`priority` — no
+      real basis to assign either. `export const dynamic =
+      'force-dynamic'` on both `sitemap.ts` and `robots.ts` — corrected
+      from an initial `revalidate = 60`, which broke CI. Next's own
+      docs are explicit that these two are cached *Route Handlers* by
+      default, materially different from the page-rendering case
+      documented above; `revalidate` is the *documented* way to opt a
+      cached Route Handler out of indefinite caching, but verified live
+      that it wasn't sufficient here — Next still attempted to
+      **prerender `/sitemap.xml` during `next build`**, which calls
+      `getPublishedCourses`/`getHomepage` and needs a live Postgres
+      connection; this app's CI build deliberately has none (the same
+      "no live database access at build time" invariant every page in
+      this app already relies on — see `[locale]/layout.tsx`'s own
+      comment on why `generateStaticParams` is never used here), so
+      the build failed with `ECONNREFUSED`. `force-dynamic` defers the
+      route to request time entirely, so the database call only ever
+      happens on a real request — freshness stays bounded by the
+      existing 60s `unstable_cache` TTL inside the query layer, exactly
+      as every page already relies on; the route itself needs no
+      caching on top of that.
+
+      **Robots** (`src/app/robots.ts`) — indexing gated on
+      `ALLOW_SEARCH_INDEXING` as above: disallowed everywhere by
+      default (`disallow: '/'`), and only when explicitly allowed
+      does it emit `allow: '/'` with `disallow: ['/admin', '/api']`
+      plus a `sitemap` pointer. Documented plainly, including in the
+      file's own comment: this is a crawler-cooperation signal, not
+      an access boundary — Payload's own access control (native
+      drafts, `publishedOnlyAccess`, RBAC) is what actually protects
+      anything, unchanged by this milestone. `/admin`'s own generated
+      Next.js route files (`(payload)/layout.tsx`,
+      `admin/[[...segments]]/page.tsx`) are marked
+      "DO NOT MODIFY — regenerated by Payload" and don't set their
+      own `noindex`; left alone rather than risking a rewrite
+      overwriting a hand-added meta tag — the `robots.txt` disallow
+      plus the real login-gated auth boundary are the intentional,
+      sufficient signal here.
+
+      **Verification**: multilingual `<head>` output inspected
+      directly (title/description/canonical/hreflang/og:*/lang+dir/
+      JSON-LD) for the homepage in all 3 locales and one real course
+      in all 3 locales — no cross-locale fallback found anywhere. All
+      9 real course URLs confirmed self-canonical; an invalid slug
+      confirmed 404 (unchanged from Milestone H), absent from the
+      sitemap, and emits no canonical. Sitemap output inspected
+      directly: exactly the expected 12 URLs today, no `/admin`,
+      no `/api`, no draft/unpublished record. Robots output inspected
+      with indexing both disallowed (the honest default) and allowed
+      (simulating Milestone M's opt-in) to prove the gate is real, not
+      cosmetic. Full public-lead and RBAC regression re-run
+      unchanged: `POST /api/apply` valid → 200, invalid `courseSlug`
+      → 400, anonymous `POST /api/applications` → 403, advisor/editor/
+      admin Applications boundaries from Milestone J untouched, real
+      admin still `role: admin`. No web-payment functionality
+      introduced. `PAYLOAD_SECRET`/`DATABASE_URI` confirmed absent
+      from every metadata/sitemap/JSON-LD output. All of the above
+      became one 75-check automated regression suite run against the
+      real dev server before opening the PR (robots.txt in both
+      states, sitemap URL count/contents, all 3 homepage locales'
+      full `<head>`, all 9 course URLs' self-canonical + JSON-LD, the
+      invalid-slug 404's exact head output, the public lead/RBAC
+      regression, and the secret-leakage checks) — 0 failures on the
+      final run.
+
+      **Two real implementation bugs, found by that same testing and
+      fixed before opening the PR** — this section originally
+      described the intended design; both are corrected here to match
+      what's actually in the code:
+
+      1. The original plan put the homepage's own
+         canonical/alternates/robots default directly in
+         `[locale]/layout.tsx`, reasoning that the homepage's
+         `page.tsx` had no metadata of its own to inherit them.
+         Verified live that this was wrong: Next's `not-found.tsx`
+         boundary does **not** inherit the failing route's own
+         `page.tsx` `generateMetadata` — only its ancestor layouts'.
+         An invalid course slug's 404 page therefore emitted `<link
+         rel="canonical" href=".../ar">` (the Arabic homepage) plus a
+         duplicate `<meta name="robots" content="index, follow">`
+         sitting alongside Next's own auto-injected `noindex` for the
+         404 response. Fixed by moving everything route-specific
+         (canonical, alternates, openGraph, twitter, robots) out of
+         the layout entirely and into each real page's own
+         `generateMetadata` (`[locale]/page.tsx` for the homepage,
+         `courses/[slug]/page.tsx` for course pages) — a 404 boundary
+         now has nothing positive to inherit from any ancestor.
+      2. While fixing the above, the homepage's `generateMetadata`
+         conditionally set `title: siteSettings.defaultSeo.metaTitle
+         ? {...} : undefined`. `title: undefined` is not the same as
+         omitting the `title` key — the key's mere presence (even
+         with an `undefined` value) suppressed the layout's
+         `title.default` inheritance entirely, producing a homepage
+         with no `<title>` element at all. Fixed by conditionally
+         spreading the key in (`...(condition ? { title: {...} } :
+         {})`) so it's genuinely absent, not present-but-empty, when
+         there's no CMS override.
 - [ ] **L — Accessibility / responsive / performance pass**.
 - [ ] **M — Production build + deployment readiness**.
 - [ ] **N — Architecture prep for WhatsApp Cloud API + AI enrollment

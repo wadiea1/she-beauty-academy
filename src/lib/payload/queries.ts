@@ -49,6 +49,11 @@ function mediaToImageRef(media: Media | number | null | undefined, fallbackAlt: 
 }
 
 export interface HomepageContent {
+  /** ISO timestamp of the underlying document's last edit — one
+   * global document with localized fields, so this is the same value
+   * regardless of which locale it's queried with. Used by
+   * sitemap.ts's `lastModified`, nothing else needs it. */
+  updatedAt: string
   hero: { eyebrow: string; heading: string; lead: string; image: ImageRef }
   manifesto: { eyebrow: string; heading: string; body: string }
   whySHE: { eyebrow: string; heading: string; pillars: { title: string; body: string }[] }
@@ -77,6 +82,11 @@ async function fetchHomepage(locale: Locale): Promise<HomepageContent> {
   }
 
   return {
+    // Payload types this as optional/nullable for globals (unlike
+    // collections), even though a real published document always has
+    // one in practice — "now" as a last-resort fallback only, never
+    // reached for real data.
+    updatedAt: doc.updatedAt ?? new Date().toISOString(),
     hero: {
       eyebrow: doc.hero.eyebrow,
       heading: doc.hero.heading,
@@ -139,6 +149,10 @@ export interface CourseContent {
   title: string
   description: string
   ctaLabel: string | null
+  /** ISO timestamp, not localized (Courses' `status`/`slug`/`updatedAt`
+   * aren't localized fields) — real value for sitemap.ts's
+   * `lastModified`, not invented. */
+  updatedAt: string
 }
 
 async function fetchPublishedCourses(locale: Locale): Promise<CourseContent[]> {
@@ -157,6 +171,7 @@ async function fetchPublishedCourses(locale: Locale): Promise<CourseContent[]> {
     title: doc.title,
     description: doc.shortDescription,
     ctaLabel: doc.ctaLabel ?? null,
+    updatedAt: doc.updatedAt,
   }))
 }
 
@@ -363,9 +378,12 @@ export interface SiteSettingsContent {
   address: string | null
   /** Fallback metadata for pages that don't set their own — e.g. a
    * course with no metaTitle/metaDescription of its own yet. `ogImage`
-   * is deliberately not exposed here: none is set today, and none
-   * should be invented (no stock/placeholder Open Graph photography). */
-  defaultSeo: { metaTitle: string | null; metaDescription: string | null }
+   * is wired through as a real, optional CMS field (Milestone K) —
+   * still never fabricated: it's `null` today because nothing has
+   * been uploaded, and stays `null` until staff actually set one. No
+   * stock/placeholder Open Graph photography is generated in its
+   * place. */
+  defaultSeo: { metaTitle: string | null; metaDescription: string | null; ogImage: ImageRef | null }
 }
 
 async function fetchSiteSettings(locale: Locale): Promise<SiteSettingsContent> {
@@ -375,7 +393,10 @@ async function fetchSiteSettings(locale: Locale): Promise<SiteSettingsContent> {
     locale,
     fallbackLocale: false,
     overrideAccess: false,
-    depth: 0,
+    // depth: 1 (not 0) so defaultSeo.ogImage resolves to a Media
+    // document rather than a bare id — needed to read its url/alt via
+    // mediaToImageRef below.
+    depth: 1,
   })
   return {
     whatsappNumber: doc.whatsappNumber ?? null,
@@ -386,6 +407,9 @@ async function fetchSiteSettings(locale: Locale): Promise<SiteSettingsContent> {
     defaultSeo: {
       metaTitle: doc.defaultSeo?.metaTitle ?? null,
       metaDescription: doc.defaultSeo?.metaDescription ?? null,
+      ogImage: doc.defaultSeo?.ogImage
+        ? mediaToImageRef(doc.defaultSeo.ogImage, doc.defaultSeo.metaTitle ?? '')
+        : null,
     },
   }
 }
