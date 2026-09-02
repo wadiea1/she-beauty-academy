@@ -45,6 +45,13 @@ jobs:
       # names the failure immediately. It is also the only check that
       # covers files outside the Next build graph, such as
       # src/scripts/verifyProduction.ts.
+      #
+      # Runs before Build on purpose — a type error should fail in the
+      # step named "Typecheck", not inside a build log. That ordering
+      # is why `pnpm typecheck` runs `next typegen` first: PageProps
+      # and LayoutProps are generated into .next/types by dev/build, so
+      # on a clean checkout tsc would otherwise fail on names that do
+      # not exist yet. typegen produces exactly those without a build.
       - name: Typecheck
         run: pnpm typecheck
 
