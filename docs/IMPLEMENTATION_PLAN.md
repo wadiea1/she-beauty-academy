@@ -1332,7 +1332,19 @@ and status is this file plus `git log`.
       with the still-missing real production domain
       (`NEXT_PUBLIC_SERVER_URL`)/indexing opt-in
       (`ALLOW_SEARCH_INDEXING`) from Milestone K.
-- [ ] **M — Production build + deployment readiness**.
+- [ ] **M — Production build + deployment readiness**. Branch
+      `feat/deployment-readiness`. Full detail lives in
+      `docs/DEPLOYMENT.md` (topology, audit, blockers) and
+      `docs/RUNBOOK.md` (ordered deployment + rollback procedure) —
+      not duplicated here. Summary of what this milestone establishes:
+      formal committed Payload migrations replacing dev-mode schema
+      push, an authoritative environment contract with a
+      `verify:production` check, a fail-closed public lead-intake
+      launch gate tied to the unresolved privacy-policy blocker, a
+      rate-limit store abstraction, production security headers,
+      health/readiness endpoints, and CI migration verification.
+      **Nothing is launched**: no provider, domain, credentials,
+      legal text, or indexing.
 - [ ] **N — Architecture prep for WhatsApp Cloud API + AI enrollment
       agent** (no implementation required now, just clean seams). The
       conversion path this prepares for is lead → WhatsApp handoff/
