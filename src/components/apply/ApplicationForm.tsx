@@ -26,7 +26,7 @@ interface ApplicationFormProps {
   submitLabel: string
 }
 
-type Status = 'idle' | 'submitting' | 'success' | 'error'
+type Status = 'idle' | 'submitting' | 'success' | 'error' | 'unavailable'
 
 interface FieldErrors {
   name?: string
@@ -137,6 +137,17 @@ export function ApplicationForm({ locale, courses, preselectedCourseSlug, dict, 
         return
       }
 
+      // The server's launch gate turned intake off after this page was
+      // rendered (ApplyCTA normally prevents the form from rendering
+      // at all — see that component). Swap to the same neutral
+      // unavailable message rather than showing a generic failure that
+      // invites the visitor to keep retrying.
+      if (res.status === 503) {
+        setStatus('unavailable')
+        setFieldErrors({})
+        return
+      }
+
       // The server can reject a courseSlug the client itself never
       // flagged (its dropdown only ever lists real courses) — a stale
       // page, CMS content that changed underneath it, or a forged
@@ -178,6 +189,23 @@ export function ApplicationForm({ locale, courses, preselectedCourseSlug, dict, 
           {dict.successHeading}
         </Heading>
         <Text className="text-blush">{dict.successBody}</Text>
+      </div>
+    )
+  }
+
+  if (status === 'unavailable') {
+    return (
+      <div
+        ref={successRef}
+        role="status"
+        aria-live="polite"
+        tabIndex={-1}
+        className="mx-auto max-w-lg rounded-[var(--radius-panel)] border border-porcelain/30 bg-porcelain/5 p-6 text-center outline-none"
+      >
+        <Heading as="h3" size="md" className="mb-3 text-champagne">
+          {dict.unavailableHeading}
+        </Heading>
+        <Text className="text-blush">{dict.unavailableBody}</Text>
       </div>
     )
   }

@@ -70,6 +70,8 @@ const en = {
     privacyConsentError: 'Please accept to continue',
     courseUnavailable: 'The selected course is not available. Please choose another course.',
     genericValidationError: 'Please check your information and try again',
+    unavailableHeading: 'The consultation form is temporarily unavailable',
+    unavailableBody: 'We are getting it ready. In the meantime, you are welcome to reach out to us directly.',
   },
 } satisfies Dictionary
 

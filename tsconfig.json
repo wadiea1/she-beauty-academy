@@ -11,6 +11,12 @@
     "moduleResolution": "bundler",
     "resolveJsonModule": true,
     "isolatedModules": true,
+    // `pnpm verify:production` runs as plain Node via
+    // --experimental-strip-types, outside Next's bundler, so its
+    // relative import must carry the real `.ts` extension for Node to
+    // resolve it. Safe here because this project never emits from tsc
+    // (noEmit above) — Next/Turbopack does the building.
+    "allowImportingTsExtensions": true,
     "jsx": "react-jsx",
     "incremental": true,
     "plugins": [

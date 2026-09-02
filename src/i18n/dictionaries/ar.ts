@@ -70,6 +70,8 @@ const ar = {
     privacyConsentError: 'يرجى الموافقة للمتابعة',
     courseUnavailable: 'الدورة المختارة غير متاحة. يرجى اختيار دورة أخرى.',
     genericValidationError: 'يرجى التحقق من بياناتكِ والمحاولة مرة أخرى',
+    unavailableHeading: 'نموذج الاستشارة غير متاح حاليًا',
+    unavailableBody: 'نعمل على تجهيزه. يمكنكِ التواصل معنا مباشرةً في هذه الأثناء.',
   },
 } satisfies Dictionary
 

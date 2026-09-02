@@ -70,6 +70,8 @@ const he = {
     privacyConsentError: 'נא לאשר כדי להמשיך',
     courseUnavailable: 'הקורס שנבחר אינו זמין. נא לבחור קורס אחר.',
     genericValidationError: 'נא לבדוק את הפרטים שלך ולנסות שוב',
+    unavailableHeading: 'טופס הייעוץ אינו זמין כרגע',
+    unavailableBody: 'אנחנו עובדות על זה. בינתיים אפשר לפנות אלינו ישירות.',
   },
 } satisfies Dictionary
 
