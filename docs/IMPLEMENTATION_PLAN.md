@@ -1435,13 +1435,84 @@ and status is this file plus `git log`.
       READY FOR PUBLIC LAUNCH: NO** — the correct verdict, with the
       privacy policy and the non-durable rate limiter named as the two
       remaining blockers.
-- [ ] **N — Architecture prep for WhatsApp Cloud API + AI enrollment
+- [x] **N — Architecture prep for WhatsApp Cloud API + AI enrollment
       agent** (no implementation required now, just clean seams). The
       conversion path this prepares for is lead → WhatsApp handoff/
       follow-up → staff/AI conversation → consultation/visit → admin
       manually confirms enrollment — payment stays off-platform the
       whole way through (see the no-web-payment decision above); this
       milestone is about conversation handoff, not a checkout flow.
+      Branch `feat/whatsapp-ai-architecture`. Full design in
+      `docs/WHATSAPP_AI_ARCHITECTURE.md` — not duplicated here.
+
+      **Nothing is connected**: no WhatsApp provider, AI provider,
+      credential, template, webhook route, worker, or scheduler, and
+      zero dependencies added. Delivered as documentation plus pure
+      types and functions.
+
+      **The audit changed the shape of the work, twice.** First,
+      `Applications.status` already contained the exact target
+      lifecycle (`new` → `automatic_followup` → `engaged` →
+      `qualified` → `consultation_booked` → `visited` → `enrolled`,
+      plus the six side outcomes), and `marketingConsent` was already
+      separate from `privacyConsentAt` with its own timestamp and a
+      recorded `privacyPolicyVersion` — so the consent separation this
+      milestone had to protect already existed, and **no status schema
+      change was needed**. Second, Payload 3.88 turns out to ship a
+      jobs queue backed by a `payload-jobs` collection in the same
+      Postgres database (retries with backoff, `waitUntil`,
+      `totalTried`, `hasError`, structured log, `concurrencyKey`, and
+      run/handle-schedules endpoints). Read from the installed package
+      rather than assumed. It fits, which removes Redis/BullMQ/QStash/
+      SQS/Cloud Tasks from the future plan entirely — durable jobs
+      need no new dependency and no new infrastructure. Recorded with
+      it: the endpoints are **not currently mounted** (verified live,
+      both 404, since no `jobs` config is declared) and
+      `jobs.access.run` defaults to any-logged-in-user, so N3 must set
+      it explicitly before a scheduler is pointed at it.
+
+      **Minimum domain model: two entities, not four.** Conversation
+      and Message. `AutomationEvent` was rejected because Payload's
+      job log and Message's delivery status already record it and a
+      third audit stream is mainly a place for the other two to
+      disagree; `FollowUpJob` because `payload-jobs` already is it.
+      Neither becomes a Payload collection yet — that would put two
+      permanently-empty collections in the Admin sidebar and commit,
+      in a migration that cannot later be edited, to a `body` column
+      whose existence is precisely the unresolved retention question.
+
+      **Three pure modules carry real logic**, each because the
+      alternative is an unenforceable convention:
+      `messaging/deliveryStatus.ts` merges out-of-order and duplicate
+      provider receipts monotonically, with `failed` deliberately
+      unable to override a `delivered` message; `phone/normalize.ts`
+      never guesses a country and treats `ambiguous` as a correct
+      outcome, preserving the raw submitted string in every branch;
+      `leads/transitions.ts` is the single authority on status
+      changes, making `enrolled`, `visited`, `consultation_booked` and
+      `invalid` staff-only and forbidding automation from overriding a
+      human.
+
+      **The AI contract deliberately drops `nextAction`.** An action
+      field invites the model to name an operation and the code to
+      perform it, turning generated prose into an instruction channel.
+      The assistant reports observations; application code decides
+      what they mean. The knowledge interface is shaped the same way —
+      named fixed reads only, nothing taking a collection, query,
+      filter or id from the caller — so arbitrary access is absent
+      rather than forbidden. The strongest control is structural: the
+      destination of an outbound message never comes from the model,
+      only from the conversation record.
+
+      **Verified with 61 throwaway assertions** (deleted after
+      running): 12 on delivery-status merging, 14 on phone
+      normalization, 14 on transition authority, 21 on AI validation —
+      including injected `status`/`recipient`/`executeSQL` keys being
+      stripped, invented enum values rejected, every malformed
+      response degrading to a `validation_failed` handoff with an
+      empty reply, and a hallucinated course slug dropped while the
+      valid reply survives. All passed. Full regression re-run and
+      Milestone M's launch gates reconfirmed unchanged.
 
 ## Open business-info items (not blocking engineering work)
 

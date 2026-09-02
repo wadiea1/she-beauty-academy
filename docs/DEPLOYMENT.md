@@ -164,6 +164,23 @@ managed Node application platform, or a self-managed VM behind a reverse
 proxy — **none of which has been chosen**. Nothing in the repository assumes
 any of them.
 
+### One future capability worth knowing while choosing (not required today)
+
+Nothing below is needed to deploy the site as it stands, but it is cheaper to
+know now than to discover after picking a host.
+
+The planned WhatsApp follow-up work (`docs/WHATSAPP_AI_ARCHITECTURE.md`) will
+need **a scheduler able to call an HTTP endpoint on a timer** — Payload's job
+runner at `GET /api/payload-jobs/run`, protected by a shared secret. It will
+*not* need a queue service: Payload 3.88's jobs are stored in the same
+PostgreSQL database, so capability 2 already covers the durable-job
+requirement. Platforms offering built-in cron satisfy this outright; others
+need an external scheduler pointed at the URL.
+
+The endpoints are not mounted today (verified — they 404), and enabling them
+requires setting `jobs.access.run` explicitly first, since Payload's default
+admits any logged-in user.
+
 ---
 
 ## 3. Launch blockers (owner/legal/provider decisions)
