@@ -7,7 +7,12 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "seed": "payload run src/seed/seed.ts"
+    "typecheck": "tsc --noEmit",
+    "seed": "payload run src/seed/seed.ts",
+    "payload:migrate": "payload migrate",
+    "payload:migrate:create": "payload migrate:create",
+    "payload:migrate:status": "payload migrate:status",
+    "verify:production": "node --experimental-strip-types src/scripts/verifyProduction.ts"
   },
   "dependencies": {
     "@payloadcms/db-postgres": "3.88.0",
