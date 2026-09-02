@@ -34,6 +34,8 @@ export function Navigation({ locale, dict, navItems }: NavigationProps) {
   const menuId = useId()
   const closeButtonRef = useRef<HTMLButtonElement>(null)
   const toggleButtonRef = useRef<HTMLButtonElement>(null)
+  const headerRef = useRef<HTMLElement>(null)
+  const dialogRef = useRef<HTMLDivElement>(null)
   const reduceMotion = useReducedMotion()
 
   useEffect(() => {
@@ -44,13 +46,63 @@ export function Navigation({ locale, dict, navItems }: NavigationProps) {
     document.documentElement.style.overflow = 'hidden'
     closeButtonRef.current?.focus()
 
+    // Real focus trap: `inert` removes the header/main/footer from the
+    // tab order (and from AT navigation) entirely while the dialog is
+    // open, rather than just visually covering them. Verified this
+    // was a genuine gap, not a theoretical one — before this fix,
+    // Tab-ing through every focusable element inside the open drawer
+    // (close button, nav links, Apply button, language switcher) then
+    // continued straight into the Hero section's own "Book a
+    // Consultation" button underneath, fully escaping the modal.
+    // `<main>`/`<footer>` are siblings of this component (in the
+    // locale layout, not local children), so they're reached via a
+    // DOM query rather than a ref — there's exactly one of each on
+    // every public page.
+    const header = headerRef.current
+    const main = document.querySelector('main')
+    const footer = document.querySelector('footer')
+    header?.setAttribute('inert', '')
+    main?.setAttribute('inert', '')
+    footer?.setAttribute('inert', '')
+
     function onKeyDown(event: KeyboardEvent) {
-      if (event.key === 'Escape') setOpen(false)
+      if (event.key === 'Escape') {
+        setOpen(false)
+        return
+      }
+      // Full Tab-cycling within the dialog, not just the inert-based
+      // "can't reach hidden content" guarantee above — Shift+Tab from
+      // the first element wraps to the last, and Tab from the last
+      // wraps to the first, matching the WAI-ARIA APG dialog pattern.
+      // With every other landmark inert, browsers already send
+      // Tab-off-the-end to a benign, inert `document.body` rather
+      // than anywhere interactive — this is the remaining UX polish
+      // on top of that real security/usability fix, not a second
+      // instance of the same bug.
+      if (event.key !== 'Tab') return
+      const dialog = dialogRef.current
+      if (!dialog) return
+      const focusable = dialog.querySelectorAll<HTMLElement>(
+        'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])',
+      )
+      if (focusable.length === 0) return
+      const first = focusable[0]
+      const last = focusable[focusable.length - 1]
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault()
+        last.focus()
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault()
+        first.focus()
+      }
     }
     document.addEventListener('keydown', onKeyDown)
 
     return () => {
       document.documentElement.style.overflow = previousOverflow
+      header?.removeAttribute('inert')
+      main?.removeAttribute('inert')
+      footer?.removeAttribute('inert')
       document.removeEventListener('keydown', onKeyDown)
       triggerElement?.focus()
     }
@@ -70,7 +122,7 @@ export function Navigation({ locale, dict, navItems }: NavigationProps) {
     // be a *sibling* of <header>, not nested inside it, or its `inset-0`
     // resolves against the header's own ~80px box instead of the viewport.
     <>
-      <header className="sticky top-0 z-40 border-b border-champagne/60 bg-porcelain/90 backdrop-blur-sm">
+      <header ref={headerRef} className="sticky top-0 z-40 border-b border-champagne/60 bg-porcelain/90 backdrop-blur-sm">
         <div className="mx-auto flex max-w-[var(--container-editorial)] items-center justify-between px-6 py-4 sm:px-8 lg:px-12">
           <Link href={homeHref} className="group flex flex-col leading-none">
             <span className="font-display text-2xl tracking-wide text-ink transition-colors group-hover:text-rosewood-ink">
@@ -134,6 +186,7 @@ export function Navigation({ locale, dict, navItems }: NavigationProps) {
       <AnimatePresence>
         {open && (
           <motion.div
+            ref={dialogRef}
             id={menuId}
             role="dialog"
             aria-modal="true"

@@ -3,7 +3,7 @@
     "hero": {
       "eyebrow": "أكاديمية تعليم تجميل متميزة",
       "heading": "كوني SHE.",
-      "lead": "مساحة مدروسة للنساء اللواتي يأخذن حرفتهن على محمل الجد — تعليم تجميل احترافي بمعايير عالمية.",
+      "lead": "مساحة مدروسة للنساء اللواتي يأخذن حرفتهن على محمل الجد — تعليم تجميل احترافي، مبني بعناية.",
       "cta": "احجزي استشارة"
     },
     "manifesto": {
@@ -20,12 +20,12 @@
           "body": "كل تقنية تتعلمينها اختُبرت على عميلات حقيقيات، على مدى أكثر من عقد من العمل الفعلي — لا مأخوذة من كتاب."
         },
         {
-          "title": "تطبيق منذ اليوم الأول",
+          "title": "الممارسة قبل النظرية",
           "body": "وقت أقل في الجلوس، وأكثر في التنفيذ. ستمضين وقتك عند محطة العمل، لا في قاعة محاضرات."
         },
         {
           "title": "مبنية للعمل، لا للمهارة فقط",
-          "body": "المهارة تُوظِّفك. فهم علامتك التجارية وعميلاتك يجعلك مطلوبة باستمرار. نُعلّم الاثنين معًا."
+          "body": "المهارة هي الأساس. وفهم علامتك التجارية وعميلاتك هو ما يميزك. نُعلّم الاثنين معًا."
         }
       ]
     },
@@ -54,7 +54,7 @@
     "insideAcademy": {
       "eyebrow": "داخل الأكاديمية",
       "heading": "استوديو للعمل، لا للعرض فقط.",
-      "body": "كل محطة، وكل أداة، وكل زاوية في الأكاديمية مصمَّمة لتحاكي ظروف العمل الحقيقية — لأن التدريب الذي يُشبه الواقع هو التدريب الذي يبقى معك.",
+      "body": "كل محطة، وكل أداة، وكل زاوية في الأكاديمية مصمَّمة للتدريب العملي الحقيقي — لأن ما تتدربين عليه فعليًا هو ما يبقى معك.",
       "imageAlts": [
         "المدرِّبة تشرح تقنية عن قرب",
         "لقطة مقرَّبة للأدوات والمنتجات",
@@ -67,8 +67,8 @@
       "heading": "ما تأخذينه معك.",
       "points": [
         "تقنية تثقين بها، صُقلت من خلال تدريب عملي حقيقي — لا مشاهدة فقط.",
-        "دبلوم مهني عند إتمام الدورة بنجاح.",
-        "بداية ملف أعمال — عمل حقيقي أنجزتِه، لا مجرد تمرين صفّي."
+        "محادثة حقيقية أولاً — نشرح لكِ كل شيء قبل أن تلتزمي بأي شيء.",
+        "عمل عملي حقيقي أنجزتِه فعليًا — لا مجرد تمرين صفّي."
       ]
     },
     "instructor": {
@@ -87,7 +87,7 @@
       "items": [
         {
           "question": "هل أحتاج إلى خبرة سابقة للانضمام؟",
-          "answer": "كوزماتيكس 1 مصمَّمة لتكون نقطة بدايتك — لا حاجة لخبرة سابقة. كوزماتيكس 2 تُبنى مباشرة عليها."
+          "answer": "كوزماتيكس 1 مصمَّمة لتكون نقطة انطلاق، وكوزماتيكس 2 يكمل المسار من هناك. سنتحدث عمّا يناسبك تحديدًا خلال الاستشارة."
         },
         {
           "question": "كم تكلفة الدورة؟",
@@ -95,11 +95,11 @@
         },
         {
           "question": "هل أحصل على شهادة؟",
-          "answer": "نعم — دبلوم مهني عند إتمام الدورة بنجاح."
+          "answer": "الشهادة تختلف حسب الدورة — سنؤكد لكِ التفاصيل بدقة عند التواصل معكِ."
         },
         {
           "question": "أين تُقام الدورات؟",
-          "answer": "حضوريًا، في مقر الأكاديمية. سنشارككِ العنوان الكامل عند تحديد موعد استشارتك."
+          "answer": "في مقر الأكاديمية. سنشارككِ العنوان الكامل عند تحديد موعد استشارتك."
         },
         {
           "question": "ماذا يحدث بعد أن أقدّم طلبي؟",
@@ -118,7 +118,7 @@
     "hero": {
       "eyebrow": "אקדמיה מקצועית ליופי",
       "heading": "היי SHE.",
-      "lead": "מרחב מוקפד לנשים שמתייחסות למקצוע שלהן ברצינות — לימודי קוסמטיקה מקצועיים בסטנדרט בינלאומי.",
+      "lead": "מרחב מוקפד לנשים שמתייחסות למקצוע שלהן ברצינות — לימודי קוסמטיקה מקצועיים, בנויים בקפידה.",
       "cta": "קביעת ייעוץ"
     },
     "manifesto": {
@@ -135,12 +135,12 @@
           "body": "כל טכניקה שתלמדו נבחנה על לקוחות אמיתיות, לאורך למעלה מעשור של עבודה בפועל — לא נלקחה מספר לימוד."
         },
         {
-          "title": "תרגול מהיום הראשון",
+          "title": "תרגול לפני תיאוריה",
           "body": "פחות ישיבה, יותר עשייה. תבלו את הזמן בעמדת העבודה, לא באולם הרצאות."
         },
         {
           "title": "בנוי לעסק, לא רק למקצוע",
-          "body": "המקצועיות מביאה אתכן להתקבל לעבודה. הבנת המותג והלקוחה שלכן היא מה שמביא אתכן להיות מבוקשות. אנחנו מלמדות את שניהם."
+          "body": "המקצועיות היא הבסיס. הבנת המותג והלקוחה שלכן היא מה שמייחד אתכן. אנחנו מלמדות את שניהם."
         }
       ]
     },
@@ -169,7 +169,7 @@
     "insideAcademy": {
       "eyebrow": "בתוך האקדמיה",
       "heading": "סטודיו לעבודה, לא רק לתצוגה.",
-      "body": "כל עמדה, כל כלי, וכל פינה באקדמיה נבנו כדי לשקף תנאי עבודה אמיתיים — כי הכשרה שדומה למציאות היא ההכשרה שנשארת איתך.",
+      "body": "כל עמדה, כל כלי, וכל פינה באקדמיה נבנו לתרגול מעשי אמיתי — כי מה שמתרגלים בפועל הוא מה שנשאר איתך.",
       "imageAlts": [
         "המדריכה מדגימה טכניקה מקרוב",
         "תקריב על כלים ומוצרים",
@@ -182,8 +182,8 @@
       "heading": "מה שלוקחים איתכן.",
       "points": [
         "טכניקה שאתן סומכות עליה, שחודדה בתרגול מעשי אמיתי — לא רק בצפייה.",
-        "תעודה מקצועית עם סיום מוצלח של הקורס.",
-        "תחילתו של תיק עבודות — עבודה אמיתית שביצעתן, לא רק תרגיל כיתתי."
+        "שיחה אמיתית קודם כול — נסביר לכן הכול לפני שאתן מתחייבות לכל דבר.",
+        "עבודה מעשית אמיתית שביצעתן בפועל — לא רק תרגיל כיתתי."
       ]
     },
     "instructor": {
@@ -202,7 +202,7 @@
       "items": [
         {
           "question": "האם אני צריכה ניסיון קודם כדי להצטרף?",
-          "answer": "קוסמטיקה 1 נבנתה להיות נקודת ההתחלה שלכן — לא נדרש ניסיון קודם. קוסמטיקה 2 נבנית ישירות עליה."
+          "answer": "קוסמטיקה 1 נבנתה להיות נקודת פתיחה, וקוסמטיקה 2 ממשיך משם. נדבר על מה שמתאים לכן באופן אישי בשיחת הייעוץ."
         },
         {
           "question": "כמה עולה הקורס?",
@@ -210,11 +210,11 @@
         },
         {
           "question": "האם אקבל תעודה?",
-          "answer": "כן — תעודה מקצועית עם סיום מוצלח של הקורס."
+          "answer": "התעודה משתנה בהתאם לקורס — נבהיר לכן בדיוק מה כלול כשנדבר."
         },
         {
           "question": "איפה מתקיימים הקורסים?",
-          "answer": "פרונטלית, באקדמיה עצמה. נשתף אתכן בכתובת המלאה בעת קביעת מועד הייעוץ."
+          "answer": "באקדמיה עצמה. נשתף אתכן בכתובת המלאה בעת קביעת מועד הייעוץ."
         },
         {
           "question": "מה קורה אחרי שאני שולחת פנייה?",
@@ -233,7 +233,7 @@
     "hero": {
       "eyebrow": "A premium cosmetics academy",
       "heading": "Become SHE.",
-      "lead": "A considered space for women who take their craft seriously — professional cosmetics education, built to an international standard.",
+      "lead": "A considered space for women who take their craft seriously — thoughtfully built, professional cosmetics education.",
       "cta": "Book a Consultation"
     },
     "manifesto": {
@@ -250,12 +250,12 @@
           "body": "Every technique you learn has been tested on real clients, over more than a decade of hands-on work — not adapted from a textbook."
         },
         {
-          "title": "Hands-on from day one",
+          "title": "Practice over theory",
           "body": "Less sitting, more doing. You’ll spend your time at the station, not in a lecture hall."
         },
         {
           "title": "Built for the business, not just the craft",
-          "body": "Technique gets you hired. Understanding your brand and your client gets you booked. We teach both."
+          "body": "Technique is the foundation. Understanding your brand and your client is what sets you apart. We teach both."
         }
       ]
     },
@@ -284,7 +284,7 @@
     "insideAcademy": {
       "eyebrow": "Inside the Academy",
       "heading": "A studio built to work in, not just look at.",
-      "body": "Every station, every tool, every corner of the academy is set up to mirror real working conditions — because training that resembles reality is training that stays with you.",
+      "body": "Every station, every tool, every corner of the academy is designed for real, hands-on practice — because training you actually do is training that stays with you.",
       "imageAlts": [
         "Instructor demonstrating technique up close",
         "Close-up of tools and products",
@@ -297,8 +297,8 @@
       "heading": "What you take with you.",
       "points": [
         "Technique you can stand behind, refined through real hands-on practice — not just watching.",
-        "A professional diploma upon successful completion.",
-        "The start of a portfolio: real work you did, not a class demo."
+        "A real conversation first — we walk you through everything before you commit to anything.",
+        "Real, hands-on work you actually did — not a class demo."
       ]
     },
     "instructor": {
@@ -317,7 +317,7 @@
       "items": [
         {
           "question": "Do I need experience to join?",
-          "answer": "Cosmetics 1 is designed as your starting point — no prior experience required. Cosmetics 2 builds directly on it."
+          "answer": "Cosmetics 1 is designed as a starting point, and Cosmetics 2 continues from there. We’ll talk through what’s right for you during a consultation."
         },
         {
           "question": "How much does a course cost?",
@@ -325,11 +325,11 @@
         },
         {
           "question": "Do I get a certificate?",
-          "answer": "Yes — a professional diploma upon successful completion."
+          "answer": "Certification depends on the course — we’ll confirm exactly what’s included when we talk."
         },
         {
           "question": "Where are courses held?",
-          "answer": "In person, at the academy. We’ll share the full address once your consultation is scheduled."
+          "answer": "At the academy — we’ll share the full address once your consultation is scheduled."
         },
         {
           "question": "What happens after I apply?",

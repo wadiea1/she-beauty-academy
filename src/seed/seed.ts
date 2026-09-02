@@ -186,7 +186,7 @@ async function upsertCourse(payload: Awaited<ReturnType<typeof getPayload>>, ind
       status: 'draft',
       order: index + 1,
       pricingType: 'onRequest', // no real pricing exists — never fabricated
-      enrollmentState: 'open',
+      enrollmentState: 'unspecified', // safe default — see Courses.ts
       ...dataFor('ar'),
     },
   })

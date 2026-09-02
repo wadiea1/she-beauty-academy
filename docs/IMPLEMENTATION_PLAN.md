@@ -1130,7 +1130,208 @@ and status is this file plus `git log`.
          spreading the key in (`...(condition ? { title: {...} } :
          {})`) so it's genuinely absent, not present-but-empty, when
          there's no CMS override.
-- [ ] **L — Accessibility / responsive / performance pass**.
+- [x] **L — Accessibility / responsive / performance pass**. Branch
+      `feat/accessibility-performance`. First commit on this branch was
+      a business-content integrity audit (see that commit's own full
+      message) — required by the milestone brief before the
+      accessibility/performance work itself; not part of this section.
+
+      **Audit-first, as instructed**: read through Navigation
+      (desktop + mobile drawer), the application form, every motion
+      primitive (Reveal/StaggerGroup/StaggerItem/Thread/ThreadContainer),
+      every `src/components/ui/` primitive, the icon components, every
+      homepage section, fonts.ts, and globals.css before touching
+      anything. Most of it was already careful — Thread already
+      `aria-hidden` + `pointer-events-none`; FAQSection already native
+      `<details>/<summary>` (no clickable-div anti-pattern); icons
+      already `aria-hidden`; Reveal/ImageFrame already document their
+      own SSR-hydration-mismatch rule (never branch element type or
+      baked-in style on `useReducedMotion()`, only `transition.duration`)
+      from Milestone E; fonts already `preload:false` + `:lang()`-scoped
+      so only the active locale's font is ever fetched. Then verified
+      the rest for real rather than trusting the reading — a 90-plus
+      check automated harness (headless Edge/CDP: structure/landmark
+      checks, image-alt completeness, a refined clickable-div-anti-
+      pattern heuristic, horizontal-overflow checks, `lang`/`dir`
+      checks, console-error capture, and a WCAG contrast checker using
+      real computed styles read back via a canvas pixel round-trip —
+      needed because Tailwind v4 emits `oklab()` for some opacity-
+      modifier colors in this browser, which neither a naive string
+      parser nor `fillStyle` serialization alone could resolve to real
+      sRGB bytes) — plus a dedicated keyboard test for the mobile
+      drawer specifically.
+
+      **One real, confirmed bug found and fixed**: the mobile
+      navigation drawer (`role="dialog"`, `aria-modal="true"`, focus
+      moved to its close button on open, Escape closed it, body
+      scroll locked — all already correct) had no actual focus trap.
+      Verified live: Tab-ing through every one of the drawer's 9
+      focusable elements continued straight into the Hero section's
+      own "Book a Consultation" button underneath it, fully escaping
+      the open modal into content that was only *visually* covered,
+      not actually inert. Fixed in `Navigation.tsx` by marking
+      `<header>`, `<main>`, and `<footer>` `inert` for the duration the
+      drawer is open (removed on close, alongside the existing scroll-
+      lock/focus-restore cleanup) — `inert` removes a subtree from the
+      tab order and assistive-tech navigation entirely, a stronger and
+      simpler guarantee than manually intercepting Tab. Added full
+      Tab/Shift+Tab cycling within the dialog on top of that (wraps
+      last→first and first→last, matching the WAI-ARIA APG dialog
+      pattern) as further polish once the real hazard was closed.
+      Re-verified against the actual production build (not dev, to
+      rule out dev-only artifacts like Next's dev-overlay portal
+      showing up in the tab order) — the drawer's focus now
+      demonstrably never leaves it, in either direction.
+
+      **Contrast**: every real rendered text/background combination
+      checked (Hero heading, Hero eyebrow, header nav links, FAQ
+      question/answer, the Apply section's heading/body/form
+      labels/submit button on its dark background, footer text/links)
+      passed WCAG AA with real measured ratios — the tightest was FAQ
+      answer text at 4.76:1 (needs 4.5), the loosest well over 10:1.
+      No palette changes were needed; the existing rosewood/champagne/
+      cocoa/ink system already has real, comfortable margin. (Two
+      apparent early "failures" during this check were the contrast
+      script itself choking on `oklab()` color strings, not real
+      issues — fixed in the test tooling before trusting any result
+      from it.)
+
+      **Responsive**: **corrected during PR review.** The original
+      pass here reported a ~492px floor on headless Edge's
+      `--window-size` launch flag and treated that as a stand-in for
+      320/360px, reasoning that no breakpoint exists below `sm:`
+      (640px) in this design so the two would behave identically.
+      That reasoning doesn't hold in general — a narrower viewport can
+      still surface intrinsic/min-content overflow, long localized
+      words, or flex/grid sizing pressure even within the same media-
+      query bucket — and it also turned out to rest on a false
+      premise: the ~492px "floor" was never a real platform limit.
+      Re-investigated and found the actual cause: this session's
+      earlier screenshot scripts constructed the tab-creation URL from
+      a CLI argument, and Git Bash's MSYS path-conversion silently
+      mangled a leading `/` argument into a bogus Windows path before
+      node ever saw it — so the *navigation itself* was failing
+      silently, not `Emulation.setDeviceMetricsOverride`. That API
+      works correctly once the URL bug is out of the picture.
+
+      Redone with genuine `Emulation.setDeviceMetricsOverride`
+      (`width`/`height`, `deviceScaleFactor: 1`, `mobile: false`) on a
+      normally-launched browser (no fixed `--window-size`), with
+      `window.innerWidth` read back and confirmed equal to the
+      requested value before trusting any other measurement — 320 and
+      360px both verified genuine (`innerWidth: 320`/`360`,
+      `clientWidth: 305`/`345` after the scrollbar). 30 checks across
+      the full requested matrix: `/ar`, `/he`, `/en` homepage at both
+      320 and 360px, plus a representative course page (`cosmetics-1`)
+      in all 3 locales at 320px — `documentElement.scrollWidth <=
+      clientWidth` on every one, **and** a stricter per-element check
+      (every element's own bounding rect against the viewport edge,
+      not just the document root) found zero real offenders. The
+      element-level check's first run did flag the application form's
+      intentionally off-screen honeypot field (positioned at
+      `left: -9999px` on purpose — see `ApplicationForm.tsx`) as a
+      false positive; excluded via its own `aria-hidden="true"`
+      wrapper once recognized, not a real defect. Visually inspected
+      via real screenshots at true 320px (hero, nav, course cards,
+      the full application form and consent checkboxes, FAQ, footer,
+      and the Arabic course page's breadcrumb/RTL layout end to end)
+      — everything wraps and stacks cleanly, nothing clipped.
+
+      The mobile drawer was also re-tested at a genuinely emulated
+      320px specifically (the milestone's own real accessibility bug
+      was here, so this was worth re-confirming at the actual target
+      width, not inferred from a wider one): opens correctly, zero
+      overflow while open, first focus lands on the close button,
+      `header`/`main`/`footer` all `inert`, Tab-cycling through all 9
+      focusable elements never escapes the dialog, Shift+Tab from the
+      first element wraps backward and stays inside, Escape closes it,
+      and focus returns to the toggle button afterward — all confirmed
+      at true 320px, not assumed from the 1440px result.
+
+      No responsive defect was found at true 320/360px — no code
+      change was necessary, only this corrected verification record.
+
+      **`enrollmentState: 'unspecified'` public-behavior sanity
+      check** (re-confirmed while doing this correction, precisely):
+      `CourseHero.tsx` only renders a status-badge `<Text>` as a
+      sibling of the "#apply" CTA link when `statusBadge` is non-null,
+      and the course page's `statusBadge` computation treats
+      `'unspecified'` exactly like `'open'` — null either way. Checked
+      structurally (not fuzzy text matching, which would also catch
+      the header's own unrelated "Open menu" button): on all 3 real
+      courses' pages, the CTA's sibling group contains exactly the one
+      link and nothing else — no "Open"/"Enrollment open"/"Enroll
+      now" badge, message, or state is ever derived from
+      `'unspecified'`. The consultation CTA itself is of course still
+      present and available, as intended — that's a lead action, not
+      an enrollment-open claim. No schema or component change was
+      needed; this already behaved correctly.
+
+      **Reduced motion**: reconfirmed via CDP `prefers-reduced-motion:
+      reduce` emulation (the same forced-preference methodology as
+      Milestone E) — content renders immediately with no invisible
+      states, the mobile drawer remains fully usable, and Motion's own
+      library-level console notice ("You have Reduced Motion enabled…")
+      fires as expected — a benign, third-party diagnostic message,
+      not an application defect, and not something a real visitor
+      without reduced motion enabled would ever see.
+
+      **Motion/Thread performance**: re-read Thread.tsx/ThreadContainer.tsx
+      confirms `useScroll`/`useTransform` bind the SVG path via Motion's
+      `style` prop outside React's render cycle — scrolling was already
+      verified to trigger no `setState`/re-render in Milestone E, and
+      nothing in this milestone's changes touches that code, so it
+      wasn't re-litigated without new evidence.
+
+      **Client bundle** (freshly measured this milestone, not reused
+      from Milestone E's stale figure): via CDP `Network.getResponseBody`
+      summed per request for a real page load — the only reliable
+      method found; this Edge build's `Content-Length` headers and
+      `Network.dataReceived` events were both unusable for local
+      requests (documented in the measurement script). Homepage:
+      ~657 KB decoded/uncompressed JS, ~58 KB CSS, ~882 KB total
+      across 16 requests. Course page: ~650 KB JS, near-identical
+      profile — confirms the same chunks are shared across routes,
+      no route-specific duplication. These are decoded (parsed) sizes,
+      not gzip/brotli wire bytes — real transfer is smaller in
+      production (compression is Next's default), but this session's
+      tooling couldn't independently confirm the compressed figure, so
+      only the decoded number is reported. No duplicated dependencies
+      or obviously-avoidable bloat found in the chunk breakdown; no
+      dependency changes made — no evidence to act on, matching the
+      brief's "don't chase arbitrary bundle-size numbers" instruction.
+
+      **Server/client boundaries**: unchanged and reconfirmed —
+      homepage and course pages remain Server Components; Payload
+      queries, metadata generation, and the application service all
+      stay `server-only`; `Navigation`, `ApplicationForm`, and the
+      motion primitives remain the only client islands, unchanged in
+      scope by this milestone (the drawer fix only added `useRef`/DOM
+      calls inside `Navigation`'s existing client boundary, not a new
+      one).
+
+      **Images/fonts**: `ImageFrame`'s placeholder already uses
+      `role="img"` + real `aria-label` with stable aspect-ratio sizing
+      (no CLS) and no stock imagery — confirmed unchanged, no photography
+      exists yet. Font config confirmed already minimal/correct
+      (`preload:false`, per-locale `:lang()` scoping, `display:swap`) —
+      no changes made.
+
+      **Full regression** (SEO/Milestone K, lead intake/Milestone I,
+      RBAC/Milestone J — all re-run against this milestone's changes,
+      not assumed unaffected): sitemap still exactly 12 URLs, robots
+      still disallows by default, canonical/JSON-LD still present on
+      homepage and course pages, invalid course slug still 404s with
+      no canonical leak and stays out of the sitemap; `POST /api/apply`
+      still 200 for a valid submission and 400 for an invalid
+      `courseSlug`; anonymous `GET`/`POST /api/applications` still 403;
+      no web-payment language anywhere on the public site. No
+      production indexing was enabled. `unpublished-v0` privacy state
+      and the in-memory rate limiter were both left untouched, as
+      instructed — both remain documented Milestone M blockers, along
+      with the still-missing real production domain
+      (`NEXT_PUBLIC_SERVER_URL`)/indexing opt-in
+      (`ALLOW_SEARCH_INDEXING`) from Milestone K.
 - [ ] **M — Production build + deployment readiness**.
 - [ ] **N — Architecture prep for WhatsApp Cloud API + AI enrollment
       agent** (no implementation required now, just clean seams). The
