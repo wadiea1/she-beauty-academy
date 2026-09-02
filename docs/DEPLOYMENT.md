@@ -79,6 +79,49 @@ assumed from another version's documentation.
    **`next.config.ts` was empty**.
 7. **CI ran lint + build only** — no typecheck step, no migration verification.
 8. **README was still the unmodified `create-next-app` template.**
+9. **The admin session cookie had no `Secure` flag.** `auth: true` on the
+   Users collection takes Payload's cookie defaults, and those are
+   `sameSite: 'Lax'`, `secure: false`
+   (`payload/dist/collections/config/defaults.js`). Confirmed live against a
+   production build: `Set-Cookie: payload-token=…; Path=/; HttpOnly=true;
+   SameSite=Lax` — no `Secure`. Fixed in `src/collections/Users.ts` by
+   setting it from the configured origin rather than `NODE_ENV`, so a real
+   https deployment gets the flag while `pnpm start` against
+   `http://localhost` still works for production-mode testing. Re-verified:
+   with an https origin the cookie now carries `Secure=true`.
+
+### Session and cookie review (Payload 3.88)
+
+Defaults read from installed source and deliberately left as-is:
+
+| Setting | Value | Assessment |
+| --- | --- | --- |
+| `sameSite` | `Lax` | Correct for an admin panel — the cookie still survives top-level navigation into `/admin` while not being sent on cross-site subrequests. `Strict` would break returning to the panel from an external link for no real gain. |
+| `httpOnly` | `true` | Not readable from JavaScript. |
+| `secure` | now origin-derived | See finding 9. |
+| `tokenExpiration` | 7200s (2h) | Reasonable for staff. Shortening it mainly logs editors out mid-edit. |
+| `maxLoginAttempts` | 5 | Account lockout is on by default. |
+| `lockTime` | 600000ms (10min) | Reasonable. |
+
+### Graceful shutdown
+
+Next registers `SIGINT`/`SIGTERM` handlers in
+`next/dist/server/lib/start-server.js`, closes the HTTP server, and exits
+`143`/`130`. Neither Payload nor the Postgres adapter registers signal
+handlers, so the connection pool is torn down by process exit rather than
+drained. Acceptable here: requests are short and read-mostly, and the
+server stops accepting new connections first. **No custom server was
+added** — replacing `next start` to drain a pool would be a larger
+correctness risk than the one it removes.
+
+### Docker
+
+**Not added.** The Docker CLI is installed on this machine but its daemon
+is not running, so a Dockerfile could not be built or run even once. Per
+the brief, an untested container definition is worse than none — it looks
+authoritative while nobody has ever executed it. The application is a
+standard `pnpm install && pnpm build && pnpm start` Node 24 service; the
+capability table in §2 is what a container or buildpack has to satisfy.
 
 ### Dependency audit (`pnpm audit`, run this milestone)
 
@@ -160,6 +203,26 @@ that is not local development.
 - `migrate:fresh`, `migrate:reset`, and `migrate:refresh` are **destructive**
   and are deliberately not wired to any `pnpm` script. `PAYLOAD_DROP_DATABASE`
   must never be set in production.
+
+### The existing dev database is a special case
+
+`pnpm payload:migrate:status` against the local `she_academy` reports the
+baseline as **`Ran: No`**, and that is expected, not a fault. That database
+was built entirely by dev-mode schema push before formal migrations existed,
+so its tables are already present while the `payload_migrations` ledger is
+empty. Running `pnpm payload:migrate` against it would try to `CREATE TABLE`
+things that exist and fail.
+
+This matters only for that one pre-existing database. Any **fresh** database
+— which is what production will be — takes the baseline cleanly; that was
+proved twice this milestone, against a disposable `she_academy_migration_test`
+locally and against the CI job's throwaway Postgres, both from empty, and in
+both cases Payload then initialized and queried every collection and global
+under `NODE_ENV=production` (schema push disabled).
+
+If the local dev database ever needs to be brought under migration control,
+the safe route is to recreate it from empty and run `pnpm payload:migrate`,
+not to force the baseline onto the existing schema.
 
 See `docs/RUNBOOK.md` for the ordered deployment procedure and the rollback
 model.
