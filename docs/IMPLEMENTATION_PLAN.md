@@ -1332,7 +1332,109 @@ and status is this file plus `git log`.
       with the still-missing real production domain
       (`NEXT_PUBLIC_SERVER_URL`)/indexing opt-in
       (`ALLOW_SEARCH_INDEXING`) from Milestone K.
-- [ ] **M — Production build + deployment readiness**.
+- [ ] **M — Production build + deployment readiness**. Branch
+      `feat/deployment-readiness`. Full detail lives in
+      `docs/DEPLOYMENT.md` (topology, audit, blockers) and
+      `docs/RUNBOOK.md` (ordered deployment + rollback procedure) —
+      not duplicated here. Summary of what this milestone establishes:
+      formal committed Payload migrations replacing dev-mode schema
+      push, an authoritative environment contract with a
+      `verify:production` check, a fail-closed public lead-intake
+      launch gate tied to the unresolved privacy-policy blocker, a
+      rate-limit store abstraction, production security headers,
+      health/readiness endpoints, and CI migration verification.
+      **Nothing is launched**: no provider, domain, credentials,
+      legal text, or indexing.
+
+      **Migrations proved, twice, from empty.** The baseline (52
+      tables) was applied to a disposable `she_academy_migration_test`
+      in 418ms and again to a `she_academy_ci_sim` standing in for the
+      CI job (413ms); both recorded as batch 1, and in both cases
+      Payload then initialized and queried all 6 collections and all 3
+      globals with `NODE_ENV=production` — which is what makes it a
+      proof rather than a demo, since the Postgres adapter only
+      performs its dev-mode schema push when `NODE_ENV !==
+      'production'`, so a passing query cannot have been silently
+      repaired. Both disposable databases were dropped afterwards and
+      the real `she_academy` was re-checked intact each time (1 admin
+      user, 3 courses, 5 FAQs, 0 applications). The real dev DB itself
+      reports `Ran: No` and always will — it predates migrations and
+      was built by schema push, so its tables exist while its ledger is
+      empty. That distinction is written down in `docs/DEPLOYMENT.md`
+      §4 so nobody "fixes" it by forcing the baseline onto it.
+
+      **Lead-intake gate, both directions.** Disabled: `POST
+      /api/apply` returned `{"ok":false,"error":"unavailable"}` 503,
+      **0 Applications created**, and the page rendered 0 `<form>` and
+      0 `name="phone"` elements — the gate is enforced twice
+      server-side, so a crafted request that skips the UI still writes
+      nothing, and the visitor-facing copy names no internal reason
+      and promises no response time. Enabled (dev): valid submission
+      200, invalid course slug 400, anonymous Payload Applications
+      GET/POST 403, rate limit exactly 5 per window then 429.
+
+      **Production-mode smoke test** against a real `pnpm build` +
+      `pnpm start`: `/` → 307 `/ar`; all 3 locales and all 9 course
+      URLs 200; invalid slug 404 **with no canonical**; `/admin` 200;
+      `/api/health` ok; `/api/ready` ready — and with the database
+      unreachable, health stayed 200 while ready returned 503
+      `not_ready` **with no credentials, host, or stack trace in the
+      response or the log**. All four security headers present on the
+      public site, on `/admin`, and on API error responses. CSP and
+      HSTS deliberately absent, reasoning in `next.config.ts`.
+
+      **SEO verified in both indexing states** using the RFC 2606
+      reserved `example.com` as the origin, so no real domain was
+      invented: indexing off → `robots.txt` `Disallow: /` and every
+      page `noindex, nofollow`; indexing on → `Allow: /` with `/admin`
+      and `/api` disallowed and pages `index, follow`. Canonicals,
+      full hreflang including `x-default` → `/ar`, and all 12 sitemap
+      URLs resolved to the configured origin with **zero localhost
+      leaks** on any page.
+
+      **RBAC re-confirmed against the production build** with
+      disposable accounts (deleted afterwards; the real admin was
+      never used or altered). Editor cannot read Applications (403);
+      advisor can read but cannot create (403) — the Milestone J
+      correction holds — and cannot delete or edit content (403);
+      neither non-admin can create or delete users (403). Role
+      escalation is genuinely blocked, including the case worth
+      checking: self-promotion returns **200** because Payload's
+      field-level access strips the field rather than erroring, and
+      the role is unchanged afterwards. Promoting someone else is a
+      flat 403, and an advisor changing their own password succeeds
+      without touching their role.
+
+      **Session cookie fixed.** The review found the admin cookie
+      shipping without `Secure` — Payload's `auth: true` default is
+      `secure: false`. Now derived from the configured origin (see
+      `docs/DEPLOYMENT.md` finding 9) and re-verified carrying
+      `Secure=true` under an https origin.
+
+      **Accessibility/responsive spot regression** re-run with genuine
+      CDP viewport emulation (`innerWidth` read back and confirmed):
+      15 checks across 320/360/1440px × 5 pages × RTL and LTR — zero
+      horizontal overflow anywhere, correct `dir`/`lang` per locale,
+      exactly one `h1`, zero images without `alt`. The drawer focus
+      trap still holds at **true 320px**: focus moves to Close on
+      open, Tab cycles the 9 drawer controls and wraps without ever
+      escaping, Escape closes it and returns focus to the toggle.
+      Reduced motion works and — the failure mode that matters —
+      leaves no content stranded at opacity 0: 33 transitioning
+      elements normally, 0 under `reduce`, invisible content 0 in
+      both. The smallest interactive targets (18px footer links) were
+      measured rather than assumed: 18px gaps put 36px between
+      centres, which clears WCAG 2.2 SC 2.5.8's spacing exception
+      (24px). The other small elements are the visually-hidden skip
+      link and the collapsed drawer's contents.
+
+      **Final gate clean**: `generate:types` and `generate:importmap`
+      produced no changes, lint clean, `tsc --noEmit` clean, `pnpm
+      build` succeeded with every route dynamic, and
+      `verify:production` reported **READY FOR DEPLOYMENT: YES /
+      READY FOR PUBLIC LAUNCH: NO** — the correct verdict, with the
+      privacy policy and the non-durable rate limiter named as the two
+      remaining blockers.
 - [ ] **N — Architecture prep for WhatsApp Cloud API + AI enrollment
       agent** (no implementation required now, just clean seams). The
       conversion path this prepares for is lead → WhatsApp handoff/

@@ -39,27 +39,111 @@ jobs:
       - name: Lint
         run: pnpm lint
 
+      # Explicit, even though `next build` also runs TypeScript. When a
+      # type error and a build error can both fail the same step, the
+      # log is harder to read than it needs to be; a dedicated step
+      # names the failure immediately. It is also the only check that
+      # covers files outside the Next build graph, such as
+      # src/scripts/verifyProduction.ts.
+      #
+      # Runs before Build on purpose — a type error should fail in the
+      # step named "Typecheck", not inside a build log. That ordering
+      # is why `pnpm typecheck` runs `next typegen` first: PageProps
+      # and LayoutProps are generated into .next/types by dev/build, so
+      # on a clean checkout tsc would otherwise fail on names that do
+      # not exist yet. typegen produces exactly those without a build.
+      - name: Typecheck
+        run: pnpm typecheck
+
       - name: Build
         run: pnpm build
         env:
           # Safe, non-secret CI placeholders — not real credentials.
-          # `next build` never connects to Postgres today: nothing here is
-          # statically generated from Payload's local API yet (the
-          # homepage is static content, and /admin + /api are dynamic
-          # routes that aren't executed at build time). Verified locally
-          # by building with these exact fake values before this workflow
-          # was added.
           #
-          # This will need to change once Milestone G makes the public
-          # site read from Payload for statically generated pages — at
-          # that point this job will need either a real `postgres:`
-          # service container, or those routes will need to move to
-          # on-demand rendering.
+          # `next build` must never need a live database, and this job
+          # is what keeps that true: no `postgres:` service is attached
+          # here on purpose. Every route is dynamic (no
+          # generateStaticParams anywhere), and sitemap.ts/robots.ts are
+          # force-dynamic precisely so the build does not query Payload
+          # (see Milestone K). If this step ever starts failing on a
+          # connection error, that invariant has been broken — fix the
+          # route, do not add a database to this job.
           #
-          # A real deployment (not this CI build) needs DATABASE_URI and
-          # PAYLOAD_SECRET as actual secret values — add those under
-          # Settings > Secrets and variables > Actions in this repo when
-          # that's set up, never committed here.
+          # A real deployment needs DATABASE_URI and PAYLOAD_SECRET as
+          # actual secrets, configured on the hosting platform and never
+          # committed here.
           DATABASE_URI: postgresql://postgres:postgres@localhost:5432/she_academy_ci
           PAYLOAD_SECRET: ci-placeholder-secret-not-for-production-use
           NEXT_PUBLIC_SERVER_URL: http://localhost:3000
+
+      # Runs as plain Node against the same rules the app uses. Proves
+      # the checker itself works and that a development-shaped config is
+      # still judged deployable. It reads no secrets and prints no
+      # values.
+      - name: Verify production configuration checker
+        run: pnpm verify:production
+        env:
+          DATABASE_URI: postgresql://postgres:postgres@localhost:5432/she_academy_ci
+          PAYLOAD_SECRET: ci-placeholder-secret-not-for-production-use
+          NEXT_PUBLIC_SERVER_URL: http://localhost:3000
+
+  migrations:
+    name: Migration smoke test
+    runs-on: ubuntu-latest
+
+    # A disposable, job-scoped PostgreSQL. Nothing here ever touches a
+    # real database — the migration path is proved against an empty one
+    # that is destroyed with the runner.
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: she_academy_migration_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URI: postgresql://postgres:postgres@localhost:5432/she_academy_migration_ci
+      PAYLOAD_SECRET: ci-placeholder-secret-not-for-production-use
+      NEXT_PUBLIC_SERVER_URL: http://localhost:3000
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup pnpm and Node.js
+        uses: pnpm/setup@v1
+        with:
+          version: 11.22.0
+          runtime: node@24
+          cache: true
+          install: false
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # The actual point of this job: the committed migrations must be
+      # able to build the current schema from nothing. If someone
+      # changes a collection and forgets `pnpm payload:migrate:create`,
+      # production would silently depend on dev-mode schema push — which
+      # does not run in production. This catches that on the PR.
+      - name: Run committed migrations against an empty database
+        run: pnpm payload:migrate
+
+      - name: Confirm migrations are recorded as applied
+        run: pnpm payload:migrate:status
+
+      # Proves the schema stands on migrations alone: NODE_ENV=production
+      # disables Payload's dev schema push, so a successful query here
+      # cannot have been repaired by a push.
+      - name: Verify Payload initializes on the migrated schema
+        run: pnpm payload run src/scripts/verifyMigratedSchema.ts
+        env:
+          NODE_ENV: production

@@ -104,5 +104,11 @@ export interface Dictionary {
     privacyConsentError: string
     courseUnavailable: string
     genericValidationError: string
+    /** Shown instead of the form when public lead intake is switched
+     * off server-side (Milestone M launch gate). Deliberately neutral:
+     * it never mentions privacy-policy versions, rate limiting, or any
+     * other internal reason, and never promises a response time. */
+    unavailableHeading: string
+    unavailableBody: string
   }
 }

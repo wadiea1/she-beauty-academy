@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { submitApplication } from '@/lib/applications/submit'
-import { applyRateLimiter } from '@/lib/rateLimit'
+import { getRateLimiter } from '@/lib/rateLimit'
+import { isPublicLeadIntakeEnabled } from '@/lib/config/runtime'
 
 // A literal segment (`api/apply`) takes precedence over Payload's
 // generated catch-all (`src/app/(payload)/api/[...slug]/route.ts`) for
@@ -49,6 +50,19 @@ function clientKey(request: NextRequest): string {
 }
 
 export async function POST(request: NextRequest) {
+  // Launch gate, checked before anything else touches the request
+  // body: while public lead intake is disabled, this endpoint accepts
+  // nothing and creates nothing. Server-controlled — a browser cannot
+  // opt back in, because the decision never leaves the server (see
+  // src/lib/config/readiness.ts for the exact conditions).
+  //
+  // 503 with a stable, generic shape: no mention of privacy-policy
+  // versions, rate-limit drivers, or any other internal reason. The
+  // form renders a neutral "temporarily unavailable" message from it.
+  if (!isPublicLeadIntakeEnabled()) {
+    return NextResponse.json({ ok: false, error: 'unavailable' }, { status: 503 })
+  }
+
   if (!isSameOrigin(request)) {
     return NextResponse.json({ ok: false, error: 'forbidden' }, { status: 403 })
   }
@@ -63,7 +77,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ ok: false, error: 'payload_too_large' }, { status: 413 })
   }
 
-  const { allowed } = applyRateLimiter.check(clientKey(request))
+  const { allowed } = getRateLimiter().check(clientKey(request))
   if (!allowed) {
     return NextResponse.json({ ok: false, error: 'rate_limited' }, { status: 429 })
   }

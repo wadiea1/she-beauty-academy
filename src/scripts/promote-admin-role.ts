@@ -8,10 +8,10 @@
 // not as a side effect of the schema change.
 //
 // Run with:
-//   pnpm exec payload run src/migrations/migrate-admin-role.ts
+//   pnpm exec payload run src/scripts/promote-admin-role.ts
 // Optionally target one specific account by email when the automatic
 // single-account case below doesn't apply:
-//   pnpm exec payload run src/migrations/migrate-admin-role.ts someone@example.com
+//   pnpm exec payload run src/scripts/promote-admin-role.ts someone@example.com
 //
 // SAFE BY DEFAULT, and idempotent — re-running after the real account
 // is already 'admin' does nothing and says so:
@@ -73,7 +73,7 @@ async function main() {
       `Found ${users.length} accounts and none is an admin yet — refusing to guess which one is the real one.`,
     )
     console.error('Re-run with the correct email, e.g.:')
-    console.error('  pnpm exec payload run src/migrations/migrate-admin-role.ts someone@example.com')
+    console.error('  pnpm exec payload run src/scripts/promote-admin-role.ts someone@example.com')
     console.error('Accounts found:')
     for (const u of users) console.error(`  - ${u.email} (id ${u.id}, role ${u.role})`)
     process.exit(1)

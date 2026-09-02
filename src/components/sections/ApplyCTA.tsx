@@ -6,6 +6,7 @@ import { Eyebrow } from '@/components/ui/Eyebrow'
 import { Button } from '@/components/ui/Button'
 import { Reveal } from '@/components/motion/Reveal'
 import { ApplicationForm } from '@/components/apply/ApplicationForm'
+import { isPublicLeadIntakeEnabled } from '@/lib/config/runtime'
 import { whatsappHref } from '@/lib/links'
 import type { Locale } from '@/i18n/config'
 import type { Dictionary } from '@/i18n/dictionaries/types'
@@ -66,13 +67,29 @@ export function ApplyCTA({
         </Reveal>
 
         <Reveal delay={0.15}>
-          <ApplicationForm
-            locale={locale}
-            courses={courses}
-            preselectedCourseSlug={preselectedCourseSlug}
-            dict={applyFormDict}
-            submitLabel={ctaLabel}
-          />
+          {/* The launch gate is evaluated here, in a Server
+            * Component, so a disabled form is never even rendered —
+            * the visitor can't fill in fields that would only be
+            * rejected. The API route enforces the same gate
+            * independently; this is the UX half, not the boundary.
+            * The message is deliberately neutral: no internal reason,
+            * no promised response time. */}
+          {isPublicLeadIntakeEnabled() ? (
+            <ApplicationForm
+              locale={locale}
+              courses={courses}
+              preselectedCourseSlug={preselectedCourseSlug}
+              dict={applyFormDict}
+              submitLabel={ctaLabel}
+            />
+          ) : (
+            <div className="mx-auto max-w-lg rounded-[var(--radius-panel)] border border-porcelain/30 bg-porcelain/5 p-6 text-center">
+              <Text size="lg" className="mb-2 font-medium text-champagne">
+                {applyFormDict.unavailableHeading}
+              </Text>
+              <Text className="text-blush">{applyFormDict.unavailableBody}</Text>
+            </div>
+          )}
         </Reveal>
 
         {whatsapp && (

@@ -2,7 +2,7 @@ import 'server-only'
 import { getPayload } from 'payload'
 import config from '@payload-config'
 import { applicationInputSchema } from './schema'
-import { PRIVACY_POLICY_VERSION } from '@/lib/legal'
+import { getPrivacyPolicyVersion } from '@/lib/legal'
 
 export type SubmitApplicationResult =
   | { ok: true }
@@ -126,7 +126,7 @@ export async function submitApplication(rawInput: unknown): Promise<SubmitApplic
         interestedCourse: courseId,
         message: input.message,
         privacyConsentAt: now,
-        privacyPolicyVersion: PRIVACY_POLICY_VERSION,
+        privacyPolicyVersion: getPrivacyPolicyVersion(),
         marketingConsent: input.marketingConsent,
         marketingConsentAt: input.marketingConsent ? now : undefined,
       },
