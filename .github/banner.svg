@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="200" viewBox="0 0 1000 200" role="img" aria-label="SHE Beauty Academy">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#f7e8ef"/>
+      <stop offset="50%" stop-color="#f0d4e0"/>
+      <stop offset="100%" stop-color="#e8c3d3"/>
+    </linearGradient>
+    <linearGradient id="wave" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#e8c3d3" stop-opacity="0.55"/>
+      <stop offset="100%" stop-color="#f7e8ef" stop-opacity="0.55"/>
+    </linearGradient>
+  </defs>
+  <rect width="1000" height="200" fill="url(#bg)"/>
+  <path d="M0 150 C 150 110, 250 185, 400 150 S 650 110, 800 148 S 950 175, 1000 150 L1000 200 L0 200 Z" fill="url(#wave)"/>
+  <path d="M0 170 C 180 140, 300 200, 470 170 S 700 145, 850 172 S 970 190, 1000 175 L1000 200 L0 200 Z" fill="#e8c3d3" fill-opacity="0.45"/>
+  <text x="500" y="88" text-anchor="middle" font-family="Segoe UI, Helvetica Neue, Arial, sans-serif" font-size="42" font-weight="700" fill="#1a1a2e">SHE Beauty Academy</text>
+  <text x="500" y="120" text-anchor="middle" font-family="Segoe UI, Helvetica Neue, Arial, sans-serif" font-size="16" fill="#2d3748">Multilingual Marketing Site &amp; Lead-Intake System</text>
+</svg>
