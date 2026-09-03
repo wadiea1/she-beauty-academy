@@ -6,6 +6,17 @@ const en = {
     brandSubtitle: 'Beauty Academy',
     tagline: 'Become SHE.',
   },
+  journey: {
+    eyebrow: 'How it works',
+    heading: 'The path, step by step.',
+    steps: [
+      { title: 'Discover SHE', body: 'See how the academy works and what the training actually involves.' },
+      { title: 'Choose your course', body: 'Three courses, one clear path from foundations to working professionally.' },
+      { title: 'Send your details', body: 'A short form. No payment, no commitment.' },
+      { title: 'Talk with us', body: 'We answer your questions and agree a consultation or a visit.' },
+      { title: 'Train at the academy', body: 'Hands-on work in the studio, with enrolment arranged in person.' },
+    ],
+  },
   nav: {
     apply: 'Book a Consultation',
     exploreCourses: 'Explore courses',

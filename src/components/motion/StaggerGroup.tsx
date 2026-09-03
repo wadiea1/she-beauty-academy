@@ -19,8 +19,11 @@ interface StaggerGroupProps extends SafeHTMLAttributes {
   staggerDelay?: number
   /** 'ul' when wrapping a semantic list (WhatYouLeaveWith's points, FAQ
    * rows) so the reveal wrapper doesn't break list-item enumeration for
-   * assistive tech — pair with `StaggerItem`'s `as="li"`. */
-  as?: 'div' | 'ul'
+   * assistive tech — pair with `StaggerItem`'s `as="li"`. 'ol' where the
+   * order carries meaning, as in the journey steps: a screen reader
+   * announcing "1 of 5" is the whole point of that section, and a `ul`
+   * would throw the sequence away. */
+  as?: 'div' | 'ul' | 'ol'
 }
 
 /**
@@ -52,6 +55,21 @@ export function StaggerGroup({
   const containerVariants = {
     hidden: {},
     visible: { transition: { staggerChildren: reduceMotion ? 0 : staggerDelay } },
+  }
+
+  if (as === 'ol') {
+    return (
+      <motion.ol
+        className={className}
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true, margin: '-80px' }}
+        variants={containerVariants}
+        {...rest}
+      >
+        {children}
+      </motion.ol>
+    )
   }
 
   if (as === 'ul') {
