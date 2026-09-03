@@ -8,6 +8,7 @@ const ar = {
   },
   nav: {
     apply: 'احجزي استشارة',
+    exploreCourses: 'استكشفي الدورات',
     openMenu: 'فتح القائمة',
     closeMenu: 'إغلاق القائمة',
     skipToContent: 'تخطي إلى المحتوى',

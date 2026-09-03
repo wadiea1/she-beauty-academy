@@ -6,7 +6,7 @@ import { cn } from '@/lib/cn'
 import { PlaceholderArt, motifFor, type Motif } from '@/components/ui/PlaceholderArt'
 
 type Ratio = 'portrait' | 'landscape' | 'square' | 'wide' | 'tall'
-type Elevation = 'flat' | 'e1' | 'e2' | 'e3'
+type Elevation = 'flat' | 'e1' | 'e2' | 'e3' | 'e4'
 
 interface ImageFrameProps {
   /** Omit until real photography lands. The slot then renders an
@@ -30,6 +30,12 @@ interface ImageFrameProps {
   /** Art-direction note shown on the empty state — what this slot is
    * *for*. Falls back to `alt`. Never rendered once `src` exists. */
   caption?: string
+  /** Set false where a foreground layer overlaps the frame's bottom edge
+   * and would half-cover the slug, which reads as a mistake rather than
+   * as depth. The slot's art direction still lives in
+   * docs/PHOTOGRAPHY_BRIEF.md, and `alt` still describes it to assistive
+   * tech either way. */
+  showCaption?: boolean
 }
 
 const ratioClass: Record<Ratio, string> = {
@@ -45,6 +51,7 @@ const elevationClass: Record<Elevation, string> = {
   e1: 'shadow-[var(--shadow-e1)]',
   e2: 'shadow-[var(--shadow-e2)]',
   e3: 'shadow-[var(--shadow-e3)]',
+  e4: 'shadow-[var(--shadow-e4)]',
 }
 
 /**
@@ -65,6 +72,7 @@ export function ImageFrame({
   motif,
   elevation = 'flat',
   caption,
+  showCaption = true,
 }: ImageFrameProps) {
   const reduceMotion = useReducedMotion()
 
@@ -91,12 +99,14 @@ export function ImageFrame({
       {/* Reads as an art-direction slug on a contact sheet — a hairline
         * rule and a small caption pinned to the bottom edge — rather
         * than as an error message centred in an empty box. */}
-      <div className="absolute inset-x-0 bottom-0 flex items-center gap-3 p-4 sm:p-5">
-        <span aria-hidden="true" className="h-px w-6 shrink-0 bg-rosewood-ink/40" />
-        <span className="font-body text-[0.6875rem] leading-snug text-rosewood-ink/70">
-          {caption ?? alt}
-        </span>
-      </div>
+      {showCaption && (
+        <div className="absolute inset-x-0 bottom-0 flex items-center gap-3 p-4 sm:p-5">
+          <span aria-hidden="true" className="h-px w-6 shrink-0 bg-rosewood-ink/40" />
+          <span className="font-body text-[0.6875rem] leading-snug text-rosewood-ink/70">
+            {caption ?? alt}
+          </span>
+        </div>
+      )}
     </div>
   )
 

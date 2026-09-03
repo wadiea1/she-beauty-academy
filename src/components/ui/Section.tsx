@@ -3,7 +3,7 @@ import type { HTMLAttributes } from 'react'
 
 type As = 'section' | 'article' | 'div' | 'aside' | 'footer'
 type Tone = 'porcelain' | 'shell' | 'ink' | 'blush' | 'transparent'
-type Spacing = 'sm' | 'md' | 'lg'
+type Spacing = 'sm' | 'md' | 'lg' | 'hero'
 
 interface SectionProps extends HTMLAttributes<HTMLElement> {
   as?: As
@@ -30,6 +30,7 @@ const spacingClass: Record<Spacing, string> = {
   sm: 'py-[var(--spacing-section-sm)]',
   md: 'py-[var(--spacing-section)]',
   lg: 'py-[var(--spacing-section-lg)]',
+  hero: 'pt-[var(--spacing-hero-top)] pb-[var(--spacing-hero-bottom)]',
 }
 
 /**

@@ -102,7 +102,11 @@ export default async function HomePage({ params }: PageProps<'/[locale]'>) {
   return (
     <>
       <ThreadContainer>
-        <Hero copy={homepage.hero} ctaLabel={dict.nav.apply} />
+        <Hero
+          copy={homepage.hero}
+          ctaLabel={dict.nav.apply}
+          secondaryCtaLabel={dict.nav.exploreCourses}
+        />
         <Manifesto copy={homepage.manifesto} />
         <WhySHE copy={homepage.whySHE} />
         <Courses

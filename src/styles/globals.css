@@ -15,6 +15,13 @@
   --spacing-section-sm: clamp(64px, 9vh, 96px);
   --spacing-section: clamp(96px, 12vh, 180px);
   --spacing-section-lg: clamp(120px, 16vh, 240px);
+  /* Hero only. Asymmetric on purpose: the sticky header already puts
+   * air above the eyebrow, so a full section's top padding pushed the
+   * headline needlessly far down the fold — worst on short mobile
+   * viewports. Bottom padding stays generous so the hero still separates
+   * cleanly from the section beneath it. */
+  --spacing-hero-top: clamp(40px, 7vh, 104px);
+  --spacing-hero-bottom: clamp(88px, 13vh, 176px);
 
   /* Container widths */
   --container-editorial: 76rem;
@@ -273,8 +280,15 @@ body {
 
 @media (prefers-reduced-motion: reduce) {
   /* Depth stays; movement does not. Shadows and gradients are not
-   * motion, so they are deliberately left alone here. */
-  .tilt-target {
+   * motion, so they are deliberately left alone here.
+   *
+   * `!important` is required: Motion writes scroll-linked transforms to
+   * the inline `style` attribute, and only an important declaration
+   * outranks that. Same mechanism as `.thread-path` above. */
+  .tilt-target,
+  .parallax-layer,
+  .float-accent {
     transform: none !important;
+    animation: none !important;
   }
 }

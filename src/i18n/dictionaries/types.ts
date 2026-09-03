@@ -13,6 +13,10 @@ export interface Dictionary {
     // interface vocabulary. `apply` stays here: it's the site's one
     // recurring CTA action label, reused identically everywhere.
     apply: string
+    /** Secondary hero CTA. Interface vocabulary like `apply` above —
+     * the primary nav link labels themselves live in Payload's
+     * Navigation global, so they are not available here. */
+    exploreCourses: string
     openMenu: string
     closeMenu: string
     skipToContent: string

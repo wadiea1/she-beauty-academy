@@ -8,6 +8,7 @@ const en = {
   },
   nav: {
     apply: 'Book a Consultation',
+    exploreCourses: 'Explore courses',
     openMenu: 'Open menu',
     closeMenu: 'Close menu',
     skipToContent: 'Skip to content',

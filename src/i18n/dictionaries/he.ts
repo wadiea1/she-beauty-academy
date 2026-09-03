@@ -8,6 +8,7 @@ const he = {
   },
   nav: {
     apply: 'קביעת ייעוץ',
+    exploreCourses: 'לגלות את הקורסים',
     openMenu: 'פתיחת התפריט',
     closeMenu: 'סגירת התפריט',
     skipToContent: 'דלג לתוכן',
