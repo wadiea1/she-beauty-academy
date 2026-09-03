@@ -40,6 +40,41 @@
   --text-5xl: clamp(3.25rem, 5vw, 4.5rem);
   --text-6xl: clamp(3.5rem, 7vw, 6rem);
 
+
+  /* ---------------------------------------------------------------
+   * Heading metrics — script-aware.
+   *
+   * Arabic, Hebrew and Latin do not want the same vertical rhythm, and
+   * before this they shared one hardcoded set baked into Heading.tsx.
+   * Every value below is a plain custom property on :root, so the
+   * `:lang()` blocks further down can retune a whole script's headings
+   * without a single per-locale branch in component code — the same
+   * mechanism already used for --font-body/--font-display.
+   *
+   * `--heading-scale` is one optical-size knob per script. Amiri draws
+   * its Arabic noticeably smaller than the em box (it reserves vertical
+   * room for harakat), so Arabic set at an identical font-size reads
+   * smaller than Latin; the scale corrects that rather than hand-tuning
+   * five separate clamps.
+   * --------------------------------------------------------------- */
+  --heading-scale: 1;
+
+  --heading-display-size: calc(clamp(3.5rem, 7vw, 6rem) * var(--heading-scale));
+  --heading-xl-size: calc(clamp(3rem, 5vw, 4.5rem) * var(--heading-scale));
+  --heading-lg-size: calc(clamp(2.25rem, 3.6vw, 3rem) * var(--heading-scale));
+  --heading-md-size: calc(clamp(1.875rem, 2.6vw, 2.25rem) * var(--heading-scale));
+  --heading-sm-size: calc(clamp(1.5rem, 2vw, 1.75rem) * var(--heading-scale));
+
+  /* Latin (Bodoni Moda) — tight, editorial. */
+  --heading-display-leading: 1.08;
+  --heading-xl-leading: 1.12;
+  --heading-lg-leading: 1.15;
+  --heading-md-leading: 1.2;
+  --heading-sm-leading: 1.25;
+
+  /* Body leading, also per-script (Arabic paragraphs need more air). */
+  --body-leading: 1.65;
+
 }
 
 /*
@@ -51,17 +86,63 @@
  */
 :root:lang(ar) {
   --font-body: var(--font-body-arabic);
-  --font-display: var(--font-display-arabic);
+  /*
+   * Amiri only — no Latin display family behind it, deliberately.
+   *
+   * Amiri contains its own Latin, so "SHE" inside a CMS-authored Arabic
+   * heading ("كوني SHE.") renders in Amiri's companion Latin rather than
+   * in the Bodoni that `/en` uses. That is intentional: each locale is
+   * internally self-consistent, and a companion Latin drawn for the same
+   * family matches the Arabic's weight, contrast and rhythm far better
+   * than a didone dropped into an Arabic line would.
+   *
+   * Chaining Bodoni ahead of Amiri to unify the logotype was tried and
+   * reverted — it sent every Arabic glyph to Times New Roman via a
+   * fallback family that cannot be disabled. See src/styles/fonts.ts.
+   * It also saves `/ar` an entire font download.
+   */
+  --font-display: var(--font-display-arabic), ui-serif, Georgia, serif;
+
+  /* Optical correction for Amiri's smaller-on-the-em Arabic. */
+  --heading-scale: 1.06;
+
+  /*
+   * Markedly looser than Latin, and not a matter of taste: Arabic
+   * headings carry harakat (بُنيت، وُضعت) above the letterforms and deep
+   * descenders below them. At the Latin leading of 1.08 those diacritics
+   * collided with the line above — visible in the pre-redesign build.
+   * These values give them clearance while still reading as display type.
+   */
+  --heading-display-leading: 1.36;
+  --heading-xl-leading: 1.38;
+  --heading-lg-leading: 1.42;
+  --heading-md-leading: 1.46;
+  --heading-sm-leading: 1.5;
+
+  --body-leading: 1.85;
 }
 
 :root:lang(he) {
   --font-body: var(--font-body-hebrew);
-  --font-display: var(--font-display-hebrew);
+  /* Same self-consistency rule as Arabic: Frank Ruhl Libre carries its
+   * own Latin, so Hebrew pages stay on one display family throughout. */
+  --font-display: var(--font-display-hebrew), ui-serif, Georgia, serif;
+
+  /* Frank Ruhl Libre sits between Latin and Arabic: no harakat, but
+   * Hebrew's uniform x-height and final letters (ך ן ף ץ) still want
+   * more room than a Latin didone does. */
+  --heading-display-leading: 1.16;
+  --heading-xl-leading: 1.18;
+  --heading-lg-leading: 1.22;
+  --heading-md-leading: 1.28;
+  --heading-sm-leading: 1.32;
+
+  --body-leading: 1.75;
 }
 
 :root:lang(en) {
   --font-body: var(--font-body-latin);
-  --font-display: var(--font-display-latin);
+  --font-display: var(--font-display-latin), ui-serif, Georgia, serif;
 }
 
 body {
