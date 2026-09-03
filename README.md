@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="https://capsule-render.vercel.app/api?type=waving&color=0:f7e8ef,50:f0d4e0,100:e8c3d3&height=200&section=header&text=SHE%20Beauty%20Academy&fontSize=48&fontColor=1a1a2e&animation=fadeIn&fontAlignY=35&desc=Multilingual%20Marketing%20Site%20%26%20Lead-Intake%20System&descSize=16&descAlignY=55&descColor=2d3748" width="100%"/>
+<img src=".github/banner.svg" alt="SHE Beauty Academy — Multilingual Marketing Site &amp; Lead-Intake System" width="100%"/>
 
 <p>
   <img src="https://img.shields.io/badge/Next.js_16-000000?style=for-the-badge&logo=next.js&logoColor=white" alt="Next.js"/>
