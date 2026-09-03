@@ -31,7 +31,7 @@ export function CourseGallery({ images, heading, tone }: CourseGalleryProps) {
         <StaggerGroup className="grid grid-cols-2 gap-4 sm:grid-cols-3 sm:gap-6">
           {images.map((image, i) => (
             <StaggerItem key={`${image.alt}-${i}`}>
-              <ImageFrame src={image.src} alt={image.alt} ratio={i % 3 === 1 ? 'portrait' : 'square'} />
+              <ImageFrame src={image.src} alt={image.alt} motifSeed={i} elevation="e1" ratio={i % 3 === 1 ? "portrait" : "square"} />
             </StaggerItem>
           ))}
         </StaggerGroup>

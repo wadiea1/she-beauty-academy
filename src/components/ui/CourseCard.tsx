@@ -22,7 +22,7 @@ export function CourseCard({ index, title, description, href, ctaLabel }: Course
       interactive
       className="group flex h-full flex-col overflow-hidden border border-champagne/50 bg-porcelain"
     >
-      <ImageFrame ratio="landscape" alt={title} />
+      <ImageFrame ratio="landscape" alt={title} motifSeed={index} />
 
       <div className="flex flex-1 flex-col gap-3 p-6">
         {/* The index sits in the display face now. Bodoni and Amiri both

@@ -84,6 +84,8 @@ export function CourseHero({
               ratio="portrait"
               src={heroImage.src}
               alt={heroImage.alt}
+              motif="arc"
+              elevation="e3"
               priority
               revealDelay={0.15}
               className="max-w-sm lg:ms-auto"

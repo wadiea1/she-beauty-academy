@@ -36,7 +36,7 @@ export function InsideAcademy({ copy }: InsideAcademyProps) {
         <StaggerGroup className="mt-12 grid grid-cols-2 gap-4 sm:gap-6">
           {copy.images.map((image, i) => (
             <StaggerItem key={image.alt}>
-              <ImageFrame src={image.src} alt={image.alt} ratio={i % 2 === 0 ? 'square' : 'portrait'} />
+              <ImageFrame src={image.src} alt={image.alt} motifSeed={i} elevation="e1" ratio={i % 2 === 0 ? "square" : "portrait"} />
             </StaggerItem>
           ))}
         </StaggerGroup>

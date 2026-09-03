@@ -53,6 +53,8 @@ export function Hero({ copy, ctaLabel }: HeroProps) {
               ratio="portrait"
               src={copy.image.src}
               alt={copy.image.alt}
+              motif="contour"
+              elevation="e3"
               priority
               revealDelay={0.15}
               className="max-w-sm lg:ms-auto"

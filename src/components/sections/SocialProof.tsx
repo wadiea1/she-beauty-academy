@@ -39,7 +39,7 @@ export function SocialProof({ eyebrow, heading, instagramHandle, brandName }: So
         <StaggerGroup className="mt-10 grid grid-cols-2 gap-4 sm:grid-cols-4">
           {Array.from({ length: 4 }, (_, i) => (
             <StaggerItem key={i}>
-              <ImageFrame ratio="square" alt={`${brandName} on Instagram`} />
+              <ImageFrame ratio="square" alt={`${brandName} on Instagram`} motifSeed={i} />
             </StaggerItem>
           ))}
         </StaggerGroup>
