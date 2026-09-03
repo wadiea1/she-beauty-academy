@@ -1,4 +1,27 @@
-# SHE Beauty Academy
+<div align="center">
+
+<img src="https://capsule-render.vercel.app/api?type=waving&color=0:f7e8ef,50:f0d4e0,100:e8c3d3&height=200&section=header&text=SHE%20Beauty%20Academy&fontSize=48&fontColor=1a1a2e&animation=fadeIn&fontAlignY=35&desc=Multilingual%20Marketing%20Site%20%26%20Lead-Intake%20System&descSize=16&descAlignY=55&descColor=2d3748" width="100%"/>
+
+<p>
+  <img src="https://img.shields.io/badge/Next.js_16-000000?style=for-the-badge&logo=next.js&logoColor=white" alt="Next.js"/>
+  <img src="https://img.shields.io/badge/React_19-20232A?style=for-the-badge&logo=react&logoColor=61DAFB" alt="React"/>
+  <img src="https://img.shields.io/badge/Payload_CMS_3-000000?style=for-the-badge&logo=payloadcms&logoColor=white" alt="Payload"/>
+  <img src="https://img.shields.io/badge/PostgreSQL-4169E1?style=for-the-badge&logo=postgresql&logoColor=white" alt="PostgreSQL"/>
+  <img src="https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript"/>
+  <img src="https://img.shields.io/badge/Tailwind_4-38B2AC?style=for-the-badge&logo=tailwindcss&logoColor=white" alt="Tailwind"/>
+</p>
+
+<p>
+  <img src="https://img.shields.io/badge/Status-Not_Deployed-orange?style=flat-square" alt="Status"/>
+  <img src="https://img.shields.io/badge/i18n-AR_%C2%B7_HE_%C2%B7_EN-4A5568?style=flat-square" alt="i18n"/>
+  <img src="https://img.shields.io/badge/Layout-RTL--first-4A5568?style=flat-square" alt="RTL"/>
+  <img src="https://img.shields.io/badge/Node-24_LTS-339933?style=flat-square&logo=node.js&logoColor=white" alt="Node"/>
+  <img src="https://img.shields.io/badge/pnpm-11.22-F69220?style=flat-square&logo=pnpm&logoColor=white" alt="pnpm"/>
+</p>
+
+</div>
+
+---
 
 Multilingual marketing site and lead-intake system for a beauty academy,
 built on Next.js with Payload CMS embedded in the same application.
@@ -37,6 +60,68 @@ Exactly one is required today: **PostgreSQL**. Everything else — object
 storage, email delivery, a rate-limit backend, error tracking — is
 either unconfigured or intentionally deferred, and each is listed with
 its consequence in [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
+
+---
+
+## Architecture
+
+One Node process serves three surfaces — the public site, the Payload
+admin panel, and the API — against a single PostgreSQL database.
+
+```mermaid
+flowchart TB
+    VISITOR["🌐 Visitor"] --> PROXY["proxy.ts<br/>locale redirect · / → /ar"]
+    STAFF["🧑‍💼 Staff"] --> ADMIN
+
+    subgraph NODE["⬢ Single Node process — Next.js 16 + Payload 3"]
+        direction TB
+
+        subgraph SITE["app/(frontend)/[locale]"]
+            S1["Home"]
+            S2["/courses/[slug]"]
+        end
+
+        subgraph ADMIN["app/(payload)/admin"]
+            AD["Payload admin panel"]
+        end
+
+        subgraph APIS["app/api"]
+            AP["POST /apply<br/>lead intake"]
+            HL["/health · /ready"]
+        end
+
+        GATE{"lib/config/readiness.ts<br/>launch gates"}
+    end
+
+    PROXY --> SITE
+    AP --> GATE
+    GATE -->|"closed"| BLOCK["503 — no Application written"]
+    GATE -->|"open"| DATA
+
+    subgraph DATA["Payload data layer"]
+        COL["Collections<br/>Users · Media · Courses<br/>FAQs · Testimonials · Applications"]
+        GLO["Globals<br/>Homepage · Navigation · SiteSettings"]
+    end
+
+    SITE --> DATA
+    ADMIN --> DATA
+    DATA --> DB[("🐘 PostgreSQL<br/>52 tables")]
+    HL --> DB
+
+    I18N["i18n/dictionaries<br/>ar · he · en — typed"] -.-> SITE
+    RBAC["collections/access/roles.ts<br/>admin · editor · advisor"] -.-> DATA
+```
+
+**Request paths.** A visitor hits `proxy.ts` first, which resolves the
+locale before any page renders. Staff go straight to the admin panel,
+which is mounted inside the same app rather than deployed separately.
+Both read through the same Payload collections, so content published in
+the admin appears on the site without a rebuild step.
+
+**The lead-intake path is guarded server-side.** `POST /api/apply` is
+evaluated against `readiness.ts` before it does any work — a request
+crafted to bypass the UI still gets a 503 and creates nothing. The gates
+are described in full below.
 
 ---
 
@@ -130,6 +215,17 @@ drops every table.
 
 These look like restrictions and are load-bearing. Each is enforced on
 the server; a browser cannot bypass any of them.
+
+```mermaid
+flowchart LR
+    REQ["POST /api/apply<br/>in production"] --> G1{"ENABLE_PUBLIC_LEAD_INTAKE<br/>= true?"}
+    G1 -->|"no"| NO["503<br/>no Application created"]
+    G1 -->|"yes"| G2{"privacy policy<br/>published?"}
+    G2 -->|"no — unpublished-v0"| NO
+    G2 -->|"yes"| G3{"rate limiter<br/>durable?"}
+    G3 -->|"no — memory only"| NO
+    G3 -->|"yes"| OK["✅ Application written"]
+```
 
 **1. Search indexing.** `robots.ts` and page metadata emit `noindex`
 unless `ALLOW_SEARCH_INDEXING=true`. Unset is safe, so a forgotten
