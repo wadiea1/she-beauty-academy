@@ -75,6 +75,55 @@
   /* Body leading, also per-script (Arabic paragraphs need more air). */
   --body-leading: 1.65;
 
+
+  /* ---------------------------------------------------------------
+   * Depth system.
+   *
+   * Every shadow is built from the brand ink (36 27 22), never from a
+   * neutral grey. A grey shadow over warm porcelain reads as dirt —
+   * it greys out the hue underneath instead of darkening it. Tinting
+   * the shadow with the same warmth as the surface is most of what
+   * separates "premium" from "bootstrap card".
+   *
+   * Each elevation is two shadows, not one: a tight contact shadow
+   * that anchors the element to the surface, plus a wide soft ambient
+   * one. A single blur reads flat and cheap at any radius; the pair is
+   * what actually looks three-dimensional.
+   * --------------------------------------------------------------- */
+  --ink-rgb: 36 27 22;
+
+  --shadow-e1: 0 1px 2px rgb(var(--ink-rgb) / 0.04), 0 2px 8px rgb(var(--ink-rgb) / 0.04);
+  --shadow-e2: 0 2px 4px rgb(var(--ink-rgb) / 0.05), 0 10px 26px rgb(var(--ink-rgb) / 0.07);
+  --shadow-e3: 0 4px 10px rgb(var(--ink-rgb) / 0.06), 0 20px 50px rgb(var(--ink-rgb) / 0.10);
+  --shadow-e4: 0 10px 20px rgb(var(--ink-rgb) / 0.07), 0 36px 84px rgb(var(--ink-rgb) / 0.13);
+
+  /* The lighting half of the illusion. A hairline white inset along the
+   * top edge reads as a surface catching light from above, which is what
+   * makes a card look like a raised object rather than a lighter
+   * rectangle. Pairs with any elevation above. */
+  --shadow-rim: inset 0 1px 0 rgb(255 255 255 / 0.65);
+  --shadow-rim-strong: inset 0 1px 0 rgb(255 255 255 / 0.9), inset 0 0 0 1px rgb(255 255 255 / 0.35);
+
+  /* Warm surface gradients. Subtle on purpose — these read as a sheen
+   * across a physical material, not as a coloured panel. */
+  --gradient-surface: linear-gradient(175deg, rgb(255 255 255 / 0.9) 0%, rgb(255 255 255 / 0.25) 45%, transparent 100%);
+  --gradient-blush: linear-gradient(150deg, var(--color-shell) 0%, var(--color-blush) 55%, var(--color-champagne) 100%);
+  --gradient-glow: radial-gradient(70% 55% at 50% 0%, rgb(232 213 205 / 0.55) 0%, transparent 70%);
+  --gradient-veil: radial-gradient(120% 90% at 15% 0%, rgb(255 255 255 / 0.7) 0%, transparent 55%);
+
+  /* Softer radii for raised surfaces. The 2px/4px pair stays for
+   * editorial hairline elements — rules, eyebrows, inline chips —
+   * where sharpness is the point. */
+  --radius-card: 12px;
+  --radius-frame: 18px;
+  --radius-pill: 999px;
+
+  /* Premium easing. The default ease-out is the single most common
+   * tell of an un-art-directed site; these are slower out of the gate
+   * and settle rather than stop. */
+  --ease-settle: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-glide: cubic-bezier(0.22, 0.61, 0.36, 1);
+
 }
 
 /*
@@ -186,5 +235,46 @@ body {
     transition-duration: 0.01ms !important;
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
+  }
+}
+
+/*
+ * Film grain. One 140px tile of SVG fractal noise as a data URI — no
+ * network request, no image decode, and the browser rasterises the tile
+ * once and repeats it.
+ *
+ * Deliberately applied through a pseudo-element rather than a stacked
+ * background on the element itself, so it composites above the section's
+ * own gradient without the two fighting for the `background` shorthand.
+ * `mix-blend-mode: multiply` keeps it tinting the warm palette instead of
+ * dusting grey over it. Static once painted, so it costs nothing on
+ * scroll — but it is opt-in per section rather than global, because a
+ * blend mode on a full-page element would create a stacking context
+ * around everything.
+ */
+.grain::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.035;
+  mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/*
+ * Shared perspective for card tilt and layered depth (Phase 7). Declared
+ * here so the value is identical everywhere — mismatched perspective
+ * between sibling elements is what makes tilt effects look wrong.
+ */
+.perspective {
+  perspective: 1200px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* Depth stays; movement does not. Shadows and gradients are not
+   * motion, so they are deliberately left alone here. */
+  .tilt-target {
+    transform: none !important;
   }
 }

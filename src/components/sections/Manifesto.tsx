@@ -12,7 +12,7 @@ interface ManifestoProps {
 
 export function Manifesto({ copy }: ManifestoProps) {
   return (
-    <Section tone="shell" spacing="md">
+    <Section tone="blush" spacing="md" grain>
       <Container width="reading" className="text-center">
         <Reveal y={0}>
           <Eyebrow mark={false} className="justify-center">

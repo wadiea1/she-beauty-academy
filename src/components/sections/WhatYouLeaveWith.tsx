@@ -14,7 +14,7 @@ interface WhatYouLeaveWithProps {
 
 export function WhatYouLeaveWith({ copy }: WhatYouLeaveWithProps) {
   return (
-    <Section tone="shell" spacing="md">
+    <Section tone="shell" spacing="md" grain>
       <Container width="reading">
         <Reveal y={0}>
           <Eyebrow>{copy.eyebrow}</Eyebrow>

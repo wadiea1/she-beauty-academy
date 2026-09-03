@@ -21,7 +21,7 @@ interface CoursesProps {
 
 export function Courses({ copy, courses, ctaLabel, locale }: CoursesProps) {
   return (
-    <Section id="courses" tone="shell" spacing="md">
+    <Section id="courses" tone="shell" spacing="md" grain>
       <Container width="editorial">
         <Reveal y={0}>
           <Eyebrow>{copy.eyebrow}</Eyebrow>

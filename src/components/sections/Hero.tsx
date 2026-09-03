@@ -24,7 +24,7 @@ interface HeroProps {
  */
 export function Hero({ copy, ctaLabel }: HeroProps) {
   return (
-    <Section tone="porcelain" spacing="lg">
+    <Section tone="porcelain" spacing="lg" glow>
       <Container width="editorial">
         <div className="grid items-center gap-12 lg:grid-cols-12 lg:gap-8">
           <div className="lg:col-span-7">
