@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src=".github/banner.svg" alt="SHE Beauty Academy — Multilingual Marketing Site &amp; Lead-Intake System" width="100%"/>
+<img src="https://raw.githubusercontent.com/wadiea1/she-beauty-academy/main/.github/banner.svg" alt="SHE Beauty Academy — Multilingual Marketing Site &amp; Lead-Intake System" width="100%"/>
 
 <p>
   <img src="https://img.shields.io/badge/Next.js_16-000000?style=for-the-badge&logo=next.js&logoColor=white" alt="Next.js"/>
