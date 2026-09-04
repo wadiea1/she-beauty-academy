@@ -24,7 +24,7 @@ export function InstructorCredibility({ copy }: InstructorCredibilityProps) {
       <Container width="editorial">
         <div className="grid items-center gap-12 lg:grid-cols-12 lg:gap-16">
           <div className="lg:col-span-5">
-            <ImageFrame ratio="portrait" src={copy.image.src} alt={copy.image.alt} className="max-w-sm" />
+            <ImageFrame ratio="portrait" src={copy.image.src} alt={copy.image.alt} motif="contour" elevation="e2" className="max-w-sm" />
           </div>
 
           <div className="lg:col-span-7">

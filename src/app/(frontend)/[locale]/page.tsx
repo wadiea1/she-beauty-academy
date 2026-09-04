@@ -9,6 +9,7 @@ import { Hero } from '@/components/sections/Hero'
 import { Manifesto } from '@/components/sections/Manifesto'
 import { WhySHE } from '@/components/sections/WhySHE'
 import { Courses } from '@/components/sections/Courses'
+import { Journey } from '@/components/sections/Journey'
 import { InsideAcademy } from '@/components/sections/InsideAcademy'
 import { WhatYouLeaveWith } from '@/components/sections/WhatYouLeaveWith'
 import { InstructorCredibility } from '@/components/sections/InstructorCredibility'
@@ -102,7 +103,11 @@ export default async function HomePage({ params }: PageProps<'/[locale]'>) {
   return (
     <>
       <ThreadContainer>
-        <Hero copy={homepage.hero} ctaLabel={dict.nav.apply} />
+        <Hero
+          copy={homepage.hero}
+          ctaLabel={dict.nav.apply}
+          secondaryCtaLabel={dict.nav.exploreCourses}
+        />
         <Manifesto copy={homepage.manifesto} />
         <WhySHE copy={homepage.whySHE} />
         <Courses
@@ -111,6 +116,7 @@ export default async function HomePage({ params }: PageProps<'/[locale]'>) {
           ctaLabel={dict.nav.apply}
           locale={locale}
         />
+        <Journey copy={dict.journey} />
         <InsideAcademy copy={homepage.insideAcademy} />
         <WhatYouLeaveWith copy={homepage.whatYouLeaveWith} />
         <InstructorCredibility copy={homepage.instructor} />

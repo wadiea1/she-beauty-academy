@@ -4,6 +4,7 @@ import { Heading } from '@/components/ui/Heading'
 import { Text } from '@/components/ui/Text'
 import { Eyebrow } from '@/components/ui/Eyebrow'
 import { CourseCard } from '@/components/ui/CourseCard'
+import { TiltCard } from '@/components/motion/TiltCard'
 import { Reveal } from '@/components/motion/Reveal'
 import { StaggerGroup } from '@/components/motion/StaggerGroup'
 import { StaggerItem } from '@/components/motion/StaggerItem'
@@ -21,7 +22,7 @@ interface CoursesProps {
 
 export function Courses({ copy, courses, ctaLabel, locale }: CoursesProps) {
   return (
-    <Section id="courses" tone="shell" spacing="md">
+    <Section id="courses" tone="shell" spacing="md" grain>
       <Container width="editorial">
         <Reveal y={0}>
           <Eyebrow>{copy.eyebrow}</Eyebrow>
@@ -40,13 +41,15 @@ export function Courses({ copy, courses, ctaLabel, locale }: CoursesProps) {
         <StaggerGroup className="grid gap-8 sm:grid-cols-3">
           {courses.map((course, i) => (
             <StaggerItem key={course.slug} className="h-full">
-              <CourseCard
-                index={i + 1}
-                title={course.title}
-                description={course.description}
-                href={`/${locale}/courses/${course.slug}`}
-                ctaLabel={course.ctaLabel ?? ctaLabel}
-              />
+              <TiltCard>
+                <CourseCard
+                  index={i + 1}
+                  title={course.title}
+                  description={course.description}
+                  href={`/${locale}/courses/${course.slug}`}
+                  ctaLabel={course.ctaLabel ?? ctaLabel}
+                />
+              </TiltCard>
             </StaggerItem>
           ))}
         </StaggerGroup>

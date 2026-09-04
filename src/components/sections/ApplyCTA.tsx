@@ -5,6 +5,7 @@ import { Text } from '@/components/ui/Text'
 import { Eyebrow } from '@/components/ui/Eyebrow'
 import { Button } from '@/components/ui/Button'
 import { Reveal } from '@/components/motion/Reveal'
+import { Parallax } from '@/components/motion/Parallax'
 import { ApplicationForm } from '@/components/apply/ApplicationForm'
 import { isPublicLeadIntakeEnabled } from '@/lib/config/runtime'
 import { whatsappHref } from '@/lib/links'
@@ -48,8 +49,26 @@ export function ApplyCTA({
   const whatsapp = whatsappHref(whatsappNumber)
 
   return (
-    <Section id="apply" tone="ink" spacing="lg">
-      <Container width="reading" className="text-center">
+    <Section id="apply" tone="ink" spacing="lg" className="relative overflow-x-clip">
+      {/*
+        * Depth on a dark ground has to come from light, not from grain:
+        * `mix-blend-mode: multiply` over ink is invisible, so the section
+        * gets a champagne bloom and two drifting outline rings instead.
+        * They echo the hero's furthest plane, which is what ties the top
+        * and bottom of the page together as one composition.
+        */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-x-0 top-0 h-[60vh] bg-[radial-gradient(60%_60%_at_50%_0%,rgb(200_174_164/0.22)_0%,transparent_70%)]"
+      />
+      <Parallax speed={40} className="pointer-events-none absolute -top-10 -start-24 hidden lg:block">
+        <div aria-hidden="true" className="h-72 w-72 rounded-full border border-champagne/20" />
+      </Parallax>
+      <Parallax speed={-30} className="pointer-events-none absolute bottom-0 -end-16 hidden lg:block">
+        <div aria-hidden="true" className="h-56 w-56 rounded-full border border-champagne/15" />
+      </Parallax>
+
+      <Container width="reading" className="relative text-center">
         <Reveal y={0}>
           <Eyebrow mark={false} className="justify-center text-champagne">
             {copy.eyebrow}
@@ -83,7 +102,7 @@ export function ApplyCTA({
               submitLabel={ctaLabel}
             />
           ) : (
-            <div className="mx-auto max-w-lg rounded-[var(--radius-panel)] border border-porcelain/30 bg-porcelain/5 p-6 text-center">
+            <div className="mx-auto max-w-lg rounded-[var(--radius-card)] border border-porcelain/20 bg-porcelain/[0.07] p-8 text-center shadow-[var(--shadow-e3)] backdrop-blur-[2px]">
               <Text size="lg" className="mb-2 font-medium text-champagne">
                 {applyFormDict.unavailableHeading}
               </Text>

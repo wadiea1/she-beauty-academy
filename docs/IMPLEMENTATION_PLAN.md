@@ -1514,6 +1514,72 @@ and status is this file plus `git log`.
       valid reply survives. All passed. Full regression re-run and
       Milestone M's launch gates reconfirmed unchanged.
 
+- [x] **R — Premium visual redesign**. Branch `feat/premium-redesign`.
+      Frontend only: architecture, routing, Payload integration, lead
+      flow, SEO logic and every Milestone M launch gate untouched.
+
+      **Arabic typography.** Reem Kufi replaced with Amiri. Reem Kufi is
+      a Kufi face — monolinear and geometric, with kashida connectors
+      that stretch into flat bars at headline sizes — and it left `/ar`,
+      the default locale, visibly less premium than the Bodoni-set
+      `/en`. Heading sizes and leading are now script-aware custom
+      properties retuned in the `:lang()` blocks, so Arabic gets 1.36
+      display leading for harakat clearance (they collided at Latin's
+      1.08) plus a 1.06 optical scale, and no component branches on
+      locale. Two attempts to unify the "SHE" logotype across locales
+      were tried and reverted with the reasons recorded in source:
+      next/font emits no `unicode-range` at all, and
+      `adjustFontFallback: false` is not honoured, so chaining Bodoni
+      ahead of Amiri sent every Arabic glyph to Times New Roman.
+
+      **Depth.** Shadows are built from brand ink rather than neutral
+      grey — grey over warm porcelain reads as dirt — and each elevation
+      pairs a tight contact shadow with a wide ambient one, since one
+      blur reads flat at any radius. A `Surface` primitive keeps the
+      whole page lit from one imaginary light source.
+
+      **Imagery.** The CMS holds zero media, so every slot was rendering
+      a flat rectangle with alt text — the literal cause of "too
+      text-heavy". Empty slots are now composed plates: gradient
+      material, white veil, brand line-art in four deterministic motifs,
+      grain, and an art-direction slug. The ImageFrame API is unchanged,
+      so swapping in Payload Media later is only passing `src`.
+
+      **Composition and motion.** Layered three-plane hero with
+      parallax; a customer-journey section with a scroll-drawn path,
+      step numerals and RTL-aware chevrons; pull-quote and asymmetric
+      layouts breaking the nine-identical-sections rhythm; pointer tilt
+      on course cards. No GSAP, no Three.js, no WebGL — the depth is
+      perspective, lighting and layering. Reduced motion is enforced by
+      `!important` stylesheet rules that outrank Motion's inline
+      transforms, never by branching on `useReducedMotion()`.
+
+      **Measured.** Zero horizontal overflow across 320/360/390/768/1440
+      in all three locales. 14 motion layers, 11 transformed, drop to 0
+      under `prefers-reduced-motion` with no content stranded invisible.
+      All 14 tab stops show a focus ring; one `h1`, no image without
+      `alt`, every placeholder slot labelled. Cold `/ar` load went
+      420KB to 526KB — almost entirely Amiri's Arabic subset at 106.6KB
+      against Reem Kufi's ~33KB, which is inherent to the glyph coverage
+      that makes it beautiful. Client JS moved only 211.8KB to 213.8KB
+      despite three new client components; zero dependencies added.
+
+      **Correction — local QA account.** Commit `9c4a439`'s message
+      states that `qa-backend-test@example.com` was a stale account left
+      behind by Milestone M's RBAC verification. **That attribution is
+      wrong.** The account was created manually and recently by the
+      project owner through Payload Admin, as a temporary local QA
+      account for verifying the Payload Admin → backend → PostgreSQL
+      path. It was disposable, and removing it from the local
+      development database during this milestone's QA sweep was fine —
+      only the stated reason for its existence was incorrect. It has not
+      been recreated, and no other database record was touched.
+
+      The commit message itself is left as written: it is already pushed,
+      and rewriting shared history to fix a factual note is a worse trade
+      than correcting it here in the record that this document exists to
+      be.
+
 ## Open business-info items (not blocking engineering work)
 
 Tracked here rather than asked one-by-one; needed before real launch, not

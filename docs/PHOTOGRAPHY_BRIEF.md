@@ -43,6 +43,46 @@ change needed.
    Can reuse the instructor portrait or a second signature image — needs
    to work cropped tightly on mobile.
 
+## Slot inventory (added in the redesign milestone)
+
+Every slot below currently renders an art-directed placeholder — a warm
+gradient plate with brand line-art and a caption — rather than a blank
+rectangle. Replacing one with a real photograph is only ever *passing
+`src`*: the `ImageFrame` API, ratio, elevation and reveal animation all
+stay exactly as they are, so nothing about the layout shifts when
+photography arrives.
+
+| Where | Component | Ratio | Source |
+| --- | --- | --- | --- |
+| Homepage hero | `sections/Hero` | `portrait` 4:5 | Payload `homepage.hero.image` |
+| Inside the academy (mosaic) | `sections/InsideAcademy` | alternating `square` / `portrait` | Payload `homepage.insideAcademy.images[]` |
+| Instructor portrait | `sections/InstructorCredibility` | `portrait` 4:5 | Payload `homepage.instructor.image` |
+| Course card thumbnails | `ui/CourseCard` | `landscape` 3:2 | **No CMS field yet** — see below |
+| Course page hero | `course/CourseHero` | `portrait` 4:5 | Payload course hero image |
+| Course gallery | `course/CourseGallery` | `square` / `portrait` | Payload course gallery |
+| Instagram strip | `sections/SocialProof` | `square` 1:1 | **No CMS field yet** — decorative |
+
+Two of those have no Payload field behind them yet and would need one
+adding before they can hold a real image. That is a deliberate note, not
+an oversight: adding a field means a schema change and therefore a new
+migration, which belongs in its own reviewed change rather than inside a
+visual redesign.
+
+### Shooting to these ratios
+
+Shoot loose. Every slot uses `object-fit: cover`, so the frame crops to
+its aspect ratio from the centre — a tightly-framed portrait will lose
+the top of the head at 4:5. The mosaic alternates square and portrait in
+the same row, so those images need to work at both.
+
+### Placeholder motifs
+
+Four line-art motifs (`arc`, `petal`, `bloom`, `contour`) are assigned
+deterministically by index so a grid of empty slots varies rather than
+repeating. `contour` is the quietest and is used behind portrait slots,
+where a strong motif would compete with the face that eventually
+replaces it. None of this survives once `src` is set.
+
 ## Not yet needed
 
 Course-detail imagery (per-course galleries) is Milestone H — hold off

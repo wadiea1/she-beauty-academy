@@ -7,12 +7,36 @@ export interface Dictionary {
     brandSubtitle: string
     tagline: string
   }
+  /**
+   * The customer-journey section (redesign milestone).
+   *
+   * Deliberately interface vocabulary rather than Payload content. It
+   * describes the *process*, not editorial copy about the academy, and
+   * keeping it in code is what keeps it truthful: step 3 says "no
+   * payment, no commitment" and step 5 says enrolment is arranged in
+   * person, both of which are load-bearing promises the site must not
+   * contradict. There is no online payment and no automated enrolment,
+   * by standing business rule.
+   *
+   * If the academy later wants to edit this copy themselves it should be
+   * promoted to a Payload global — that is a schema change and therefore
+   * a new migration, which belongs in its own reviewed change.
+   */
+  journey: {
+    eyebrow: string
+    heading: string
+    steps: Array<{ title: string; body: string }>
+  }
   nav: {
     // home/courses/academy/faq link labels live in Payload's Navigation
     // global (Milestone G) — the actual link structure, not fixed
     // interface vocabulary. `apply` stays here: it's the site's one
     // recurring CTA action label, reused identically everywhere.
     apply: string
+    /** Secondary hero CTA. Interface vocabulary like `apply` above —
+     * the primary nav link labels themselves live in Payload's
+     * Navigation global, so they are not available here. */
+    exploreCourses: string
     openMenu: string
     closeMenu: string
     skipToContent: string

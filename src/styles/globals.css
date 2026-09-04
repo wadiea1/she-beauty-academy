@@ -15,6 +15,13 @@
   --spacing-section-sm: clamp(64px, 9vh, 96px);
   --spacing-section: clamp(96px, 12vh, 180px);
   --spacing-section-lg: clamp(120px, 16vh, 240px);
+  /* Hero only. Asymmetric on purpose: the sticky header already puts
+   * air above the eyebrow, so a full section's top padding pushed the
+   * headline needlessly far down the fold — worst on short mobile
+   * viewports. Bottom padding stays generous so the hero still separates
+   * cleanly from the section beneath it. */
+  --spacing-hero-top: clamp(40px, 7vh, 104px);
+  --spacing-hero-bottom: clamp(88px, 13vh, 176px);
 
   /* Container widths */
   --container-editorial: 76rem;
@@ -40,6 +47,90 @@
   --text-5xl: clamp(3.25rem, 5vw, 4.5rem);
   --text-6xl: clamp(3.5rem, 7vw, 6rem);
 
+
+  /* ---------------------------------------------------------------
+   * Heading metrics — script-aware.
+   *
+   * Arabic, Hebrew and Latin do not want the same vertical rhythm, and
+   * before this they shared one hardcoded set baked into Heading.tsx.
+   * Every value below is a plain custom property on :root, so the
+   * `:lang()` blocks further down can retune a whole script's headings
+   * without a single per-locale branch in component code — the same
+   * mechanism already used for --font-body/--font-display.
+   *
+   * `--heading-scale` is one optical-size knob per script. Amiri draws
+   * its Arabic noticeably smaller than the em box (it reserves vertical
+   * room for harakat), so Arabic set at an identical font-size reads
+   * smaller than Latin; the scale corrects that rather than hand-tuning
+   * five separate clamps.
+   * --------------------------------------------------------------- */
+  --heading-scale: 1;
+
+  --heading-display-size: calc(clamp(3.5rem, 7vw, 6rem) * var(--heading-scale));
+  --heading-xl-size: calc(clamp(3rem, 5vw, 4.5rem) * var(--heading-scale));
+  --heading-lg-size: calc(clamp(2.25rem, 3.6vw, 3rem) * var(--heading-scale));
+  --heading-md-size: calc(clamp(1.875rem, 2.6vw, 2.25rem) * var(--heading-scale));
+  --heading-sm-size: calc(clamp(1.5rem, 2vw, 1.75rem) * var(--heading-scale));
+
+  /* Latin (Bodoni Moda) — tight, editorial. */
+  --heading-display-leading: 1.08;
+  --heading-xl-leading: 1.12;
+  --heading-lg-leading: 1.15;
+  --heading-md-leading: 1.2;
+  --heading-sm-leading: 1.25;
+
+  /* Body leading, also per-script (Arabic paragraphs need more air). */
+  --body-leading: 1.65;
+
+
+  /* ---------------------------------------------------------------
+   * Depth system.
+   *
+   * Every shadow is built from the brand ink (36 27 22), never from a
+   * neutral grey. A grey shadow over warm porcelain reads as dirt —
+   * it greys out the hue underneath instead of darkening it. Tinting
+   * the shadow with the same warmth as the surface is most of what
+   * separates "premium" from "bootstrap card".
+   *
+   * Each elevation is two shadows, not one: a tight contact shadow
+   * that anchors the element to the surface, plus a wide soft ambient
+   * one. A single blur reads flat and cheap at any radius; the pair is
+   * what actually looks three-dimensional.
+   * --------------------------------------------------------------- */
+  --ink-rgb: 36 27 22;
+
+  --shadow-e1: 0 1px 2px rgb(var(--ink-rgb) / 0.04), 0 2px 8px rgb(var(--ink-rgb) / 0.04);
+  --shadow-e2: 0 2px 4px rgb(var(--ink-rgb) / 0.05), 0 10px 26px rgb(var(--ink-rgb) / 0.07);
+  --shadow-e3: 0 4px 10px rgb(var(--ink-rgb) / 0.06), 0 20px 50px rgb(var(--ink-rgb) / 0.10);
+  --shadow-e4: 0 10px 20px rgb(var(--ink-rgb) / 0.07), 0 36px 84px rgb(var(--ink-rgb) / 0.13);
+
+  /* The lighting half of the illusion. A hairline white inset along the
+   * top edge reads as a surface catching light from above, which is what
+   * makes a card look like a raised object rather than a lighter
+   * rectangle. Pairs with any elevation above. */
+  --shadow-rim: inset 0 1px 0 rgb(255 255 255 / 0.65);
+  --shadow-rim-strong: inset 0 1px 0 rgb(255 255 255 / 0.9), inset 0 0 0 1px rgb(255 255 255 / 0.35);
+
+  /* Warm surface gradients. Subtle on purpose — these read as a sheen
+   * across a physical material, not as a coloured panel. */
+  --gradient-surface: linear-gradient(175deg, rgb(255 255 255 / 0.9) 0%, rgb(255 255 255 / 0.25) 45%, transparent 100%);
+  --gradient-blush: linear-gradient(150deg, var(--color-shell) 0%, var(--color-blush) 55%, var(--color-champagne) 100%);
+  --gradient-glow: radial-gradient(70% 55% at 50% 0%, rgb(232 213 205 / 0.55) 0%, transparent 70%);
+  --gradient-veil: radial-gradient(120% 90% at 15% 0%, rgb(255 255 255 / 0.7) 0%, transparent 55%);
+
+  /* Softer radii for raised surfaces. The 2px/4px pair stays for
+   * editorial hairline elements — rules, eyebrows, inline chips —
+   * where sharpness is the point. */
+  --radius-card: 12px;
+  --radius-frame: 18px;
+  --radius-pill: 999px;
+
+  /* Premium easing. The default ease-out is the single most common
+   * tell of an un-art-directed site; these are slower out of the gate
+   * and settle rather than stop. */
+  --ease-settle: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-glide: cubic-bezier(0.22, 0.61, 0.36, 1);
+
 }
 
 /*
@@ -51,17 +142,63 @@
  */
 :root:lang(ar) {
   --font-body: var(--font-body-arabic);
-  --font-display: var(--font-display-arabic);
+  /*
+   * Amiri only — no Latin display family behind it, deliberately.
+   *
+   * Amiri contains its own Latin, so "SHE" inside a CMS-authored Arabic
+   * heading ("كوني SHE.") renders in Amiri's companion Latin rather than
+   * in the Bodoni that `/en` uses. That is intentional: each locale is
+   * internally self-consistent, and a companion Latin drawn for the same
+   * family matches the Arabic's weight, contrast and rhythm far better
+   * than a didone dropped into an Arabic line would.
+   *
+   * Chaining Bodoni ahead of Amiri to unify the logotype was tried and
+   * reverted — it sent every Arabic glyph to Times New Roman via a
+   * fallback family that cannot be disabled. See src/styles/fonts.ts.
+   * It also saves `/ar` an entire font download.
+   */
+  --font-display: var(--font-display-arabic), ui-serif, Georgia, serif;
+
+  /* Optical correction for Amiri's smaller-on-the-em Arabic. */
+  --heading-scale: 1.06;
+
+  /*
+   * Markedly looser than Latin, and not a matter of taste: Arabic
+   * headings carry harakat (بُنيت، وُضعت) above the letterforms and deep
+   * descenders below them. At the Latin leading of 1.08 those diacritics
+   * collided with the line above — visible in the pre-redesign build.
+   * These values give them clearance while still reading as display type.
+   */
+  --heading-display-leading: 1.36;
+  --heading-xl-leading: 1.38;
+  --heading-lg-leading: 1.42;
+  --heading-md-leading: 1.46;
+  --heading-sm-leading: 1.5;
+
+  --body-leading: 1.85;
 }
 
 :root:lang(he) {
   --font-body: var(--font-body-hebrew);
-  --font-display: var(--font-display-hebrew);
+  /* Same self-consistency rule as Arabic: Frank Ruhl Libre carries its
+   * own Latin, so Hebrew pages stay on one display family throughout. */
+  --font-display: var(--font-display-hebrew), ui-serif, Georgia, serif;
+
+  /* Frank Ruhl Libre sits between Latin and Arabic: no harakat, but
+   * Hebrew's uniform x-height and final letters (ך ן ף ץ) still want
+   * more room than a Latin didone does. */
+  --heading-display-leading: 1.16;
+  --heading-xl-leading: 1.18;
+  --heading-lg-leading: 1.22;
+  --heading-md-leading: 1.28;
+  --heading-sm-leading: 1.32;
+
+  --body-leading: 1.75;
 }
 
 :root:lang(en) {
   --font-body: var(--font-body-latin);
-  --font-display: var(--font-display-latin);
+  --font-display: var(--font-display-latin), ui-serif, Georgia, serif;
 }
 
 body {
@@ -105,5 +242,53 @@ body {
     transition-duration: 0.01ms !important;
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
+  }
+}
+
+/*
+ * Film grain. One 140px tile of SVG fractal noise as a data URI — no
+ * network request, no image decode, and the browser rasterises the tile
+ * once and repeats it.
+ *
+ * Deliberately applied through a pseudo-element rather than a stacked
+ * background on the element itself, so it composites above the section's
+ * own gradient without the two fighting for the `background` shorthand.
+ * `mix-blend-mode: multiply` keeps it tinting the warm palette instead of
+ * dusting grey over it. Static once painted, so it costs nothing on
+ * scroll — but it is opt-in per section rather than global, because a
+ * blend mode on a full-page element would create a stacking context
+ * around everything.
+ */
+.grain::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.035;
+  mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/*
+ * Shared perspective for card tilt and layered depth (Phase 7). Declared
+ * here so the value is identical everywhere — mismatched perspective
+ * between sibling elements is what makes tilt effects look wrong.
+ */
+.perspective {
+  perspective: 1200px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* Depth stays; movement does not. Shadows and gradients are not
+   * motion, so they are deliberately left alone here.
+   *
+   * `!important` is required: Motion writes scroll-linked transforms to
+   * the inline `style` attribute, and only an important declaration
+   * outranks that. Same mechanism as `.thread-path` above. */
+  .tilt-target,
+  .parallax-layer,
+  .float-accent {
+    transform: none !important;
+    animation: none !important;
   }
 }
