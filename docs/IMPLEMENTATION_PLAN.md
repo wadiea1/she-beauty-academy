@@ -1564,6 +1564,22 @@ and status is this file plus `git log`.
       that makes it beautiful. Client JS moved only 211.8KB to 213.8KB
       despite three new client components; zero dependencies added.
 
+      **Correction — local QA account.** Commit `9c4a439`'s message
+      states that `qa-backend-test@example.com` was a stale account left
+      behind by Milestone M's RBAC verification. **That attribution is
+      wrong.** The account was created manually and recently by the
+      project owner through Payload Admin, as a temporary local QA
+      account for verifying the Payload Admin → backend → PostgreSQL
+      path. It was disposable, and removing it from the local
+      development database during this milestone's QA sweep was fine —
+      only the stated reason for its existence was incorrect. It has not
+      been recreated, and no other database record was touched.
+
+      The commit message itself is left as written: it is already pushed,
+      and rewriting shared history to fix a factual note is a worse trade
+      than correcting it here in the record that this document exists to
+      be.
+
 ## Open business-info items (not blocking engineering work)
 
 Tracked here rather than asked one-by-one; needed before real launch, not
