@@ -85,7 +85,21 @@ export const plexHebrew = IBM_Plex_Sans_Hebrew({
  */
 export const amiri = Amiri({
   subsets: ['arabic'],
-  weight: ['400', '700'],
+  // 400 only. Nothing on the site sets a bold display weight — Heading
+  // is `font-normal` everywhere and no call site overrides it. Measured
+  // before and after: this does not change the /ar payload, because a
+  // weight nothing references was never fetched in the first place. It
+  // is kept because declaring a weight the design does not use is dead
+  // configuration that would start costing bytes the moment someone
+  // added a `font-bold` to a heading without thinking about it.
+  //
+  // The real cost of this typeface is the Arabic subset itself: 106.6KB
+  // against Reem Kufi's ~33KB, measured on a cold /ar load. That is
+  // inherent to Amiri's glyph coverage and contextual forms — the thing
+  // that makes it beautiful is the thing that makes it big. It loads
+  // with `display: 'swap'` so text is never invisible, and it is cached
+  // after the first visit.
+  weight: ['400'],
   variable: '--font-display-arabic',
   display: 'swap',
   preload: false,
